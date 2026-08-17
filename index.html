@@ -35,9 +35,29 @@
     <meta property="twitter:card" content="summary_large_image" />
     <meta property="twitter:title" content="Monitor VE - Calculadora de Dólar BCV y Tasas en Venezuela" />
     <meta property="twitter:description" content="Calculadora de divisas en tiempo real con tasas oficiales de BCV, Euro, USDT, brecha cambiaria e historial por días y meses." />
+
+    <!-- Zero-Flicker Seamless Dark Canvas Style -->
+    <style>
+      :root {
+        color-scheme: dark;
+        background-color: #09090b;
+      }
+      html, body {
+        background-color: #09090b !important;
+        color: #f4f4f5;
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+      #root {
+        background-color: #09090b;
+        min-height: 100vh;
+      }
+    </style>
   </head>
-  <body class="bg-[#09090b] text-neutral-100 antialiased selection:bg-yellow-400 selection:text-neutral-950 min-h-screen overflow-x-hidden">
-    <div id="root" class="min-h-screen bg-[#09090b]"></div>
+  <body class="bg-[#09090b] text-neutral-100 antialiased selection:bg-yellow-400 selection:text-neutral-950 min-h-screen overflow-x-hidden" style="background-color: #09090b;">
+    <div id="root" class="min-h-screen bg-[#09090b]" style="background-color: #09090b;"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -11,7 +11,8 @@ import {
   Sparkles,
   Send,
   MessageCircle,
-  Smartphone
+  Smartphone,
+  Download
 } from 'lucide-react';
 import { ExchangeRate } from '../types';
 
@@ -28,6 +29,9 @@ interface ShareModalProps {
   isLight: boolean;
   showToast: (msg: string) => void;
   customDomain?: string;
+  isStandaloneApp?: boolean;
+  canInstall?: boolean;
+  onInstallApp?: () => void;
 }
 
 export const ShareModal: React.FC<ShareModalProps> = ({
@@ -42,7 +46,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   themeClasses,
   isLight,
   showToast,
-  customDomain = ''
+  customDomain = '',
+  isStandaloneApp = false,
+  canInstall = false,
+  onInstallApp
 }) => {
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedSummary, setCopiedSummary] = useState(false);
@@ -295,6 +302,49 @@ export const ShareModal: React.FC<ShareModalProps> = ({
             </button>
           </div>
         </div>
+
+        {/* PWA NATIVE INSTALL OPTION (Hidden if already installed or unavailable) */}
+        {!isStandaloneApp && canInstall && onInstallApp && (
+          <div className="space-y-1.5 pt-1">
+            <span className={`text-[10px] font-extrabold ${themeClasses.textMuted} uppercase tracking-wider block pl-1`}>
+              Aplicación Nativa (PWA)
+            </span>
+            <button
+              onClick={() => {
+                onClose();
+                onInstallApp();
+              }}
+              className={`w-full p-3.5 rounded-2xl border transition-all flex items-center justify-between group text-left ${
+                isLight
+                  ? 'bg-amber-50 hover:bg-amber-100/80 border-amber-200 shadow-xs'
+                  : 'bg-yellow-400/10 hover:bg-yellow-400/15 border-yellow-400/30 shadow-xs'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-yellow-400 text-neutral-950 flex items-center justify-center font-bold shadow-sm shrink-0 group-hover:scale-105 transition-transform">
+                  <Smartphone className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs font-black ${themeClasses.textPrimary}`}>
+                      Instalar App
+                    </span>
+                    <span className="text-[9px] bg-yellow-400 text-neutral-950 font-black px-1.5 py-0.5 rounded-full uppercase">
+                      PWA
+                    </span>
+                  </div>
+                  <span className={`text-[10.5px] ${themeClasses.textSecondary} block leading-tight mt-0.5`}>
+                    Acceso directo en pantalla de inicio y modo sin conexión
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-2 rounded-xl bg-yellow-400 text-neutral-950 font-bold shrink-0 ml-2 group-hover:scale-105 transition-transform shadow-xs">
+                <Download className="w-4 h-4" />
+              </div>
+            </button>
+          </div>
+        )}
 
         {/* SHARE REPORT PRESETS (Quick Copy) */}
         <div className="space-y-2 pt-1">

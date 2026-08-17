@@ -31,10 +31,10 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
       setStatusText('Consultando USDT Binance y brecha cambiaria...');
     }, 1200);
 
-    // Check completion once minimum display duration and data readiness are both fulfilled
+    // Check completion once minimum display duration and data readiness are both fulfilled (with max timeout safety)
     const checkCompletion = setInterval(() => {
       const elapsed = Date.now() - startTime;
-      if (elapsed >= minDuration && isDataLoaded) {
+      if (elapsed >= minDuration && (isDataLoaded || elapsed >= 3200)) {
         clearInterval(checkCompletion);
         setProgress(100);
         setStatusText('¡Tasas en tiempo real verificadas!');

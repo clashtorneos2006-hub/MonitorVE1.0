@@ -321,15 +321,25 @@ export default function App() {
     return window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true;
   });
 
-  // Listen for PWA beforeinstallprompt event
+  // Listen for PWA beforeinstallprompt event and app installed event
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
     };
 
+    const handleAppInstalled = () => {
+      setIsStandaloneApp(true);
+      setDeferredPrompt(null);
+      showToast('🎉 ¡Monitor VE instalada en tu inicio!');
+    };
+
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
   }, []);
 
   // Custom rate form state
@@ -2075,7 +2085,7 @@ export default function App() {
         </div>
       )}
 
-      {/* Enhanced Share Modal with QR Code */}
+      {/* Enhanced Share Modal with QR Code and PWA Native Install */}
       <ShareModal
         isOpen={isShareOpen}
         onClose={() => setIsShareOpen(false)}
@@ -2088,6 +2098,9 @@ export default function App() {
         themeClasses={themeClasses}
         isLight={isLight}
         showToast={showToast}
+        isStandaloneApp={isStandaloneApp}
+        canInstall={!isStandaloneApp && (deferredPrompt !== null || (typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream))}
+        onInstallApp={handleInstallApp}
       />
 
       {/* Powerful & Realistic Historical Rates Center Modal */}
