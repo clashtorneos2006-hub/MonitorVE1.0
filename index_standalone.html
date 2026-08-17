@@ -1,0 +1,1373 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Monitor VE - al cambio</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Outfit', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    /* Custom scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #71717a;
+      border-radius: 99px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #52525b;
+    }
+
+    /* Soft entry and animations */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes slideRight {
+      from { transform: translateX(-100%); }
+      to { transform: translateX(0); }
+    }
+    @keyframes scaleUp {
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .animate-fade-in { animation: fadeIn 0.25s ease-out forwards; }
+    .animate-slide-right { animation: slideRight 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    .animate-scale-up { animation: scaleUp 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+
+    /* Hide standard select indicator */
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      background: transparent;
+      bottom: 0;
+      color: transparent;
+      cursor: pointer;
+      left: 0;
+      position: absolute;
+      right: 0;
+      top: 0;
+      width: auto;
+      height: auto;
+    }
+
+    body {
+      overflow-x: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+  </style>
+</head>
+<body class="font-sans antialiased selection:bg-yellow-400/30 selection:text-white">
+
+  <!-- Mount target for standalone React UMD -->
+  <div id="root"></div>
+
+  <!-- Stable production React & htm standalone dependencies -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/htm@3.1.1/dist/htm.umd.js" crossorigin></script>
+
+  <!-- Complete interactive dynamic application scripts -->
+  <script type="text/javascript">
+    const { useState, useEffect, useMemo } = React;
+    const html = htm.bind(React.createElement);
+
+    const INITIAL_RATES = [
+      { id: 'bcv', name: 'Dólar BCV', symbol: '$', rate: 56.29, changePercent: 0.52, changeAbsolute: 0.19, isUp: true, tagline: 'Tasa oficial del Banco Central de Venezuela' },
+      { id: 'euro', name: 'Euro Oficial', symbol: '€', rate: 61.42, changePercent: 0.67, changeAbsolute: 0.35, isUp: true, tagline: 'Cotización oficial en Euros de las mesas de cambio' },
+      { id: 'usdt', name: 'USDT (Binance P2P)', symbol: '₮', rate: 64.80, changePercent: -0.15, changeAbsolute: -0.10, isUp: false, tagline: 'Mercado de criptomonedas y estables P2P' },
+      { id: 'personalizada', name: 'Tasa Personalizada', symbol: '$', rate: 58.00, changePercent: 0.00, changeAbsolute: 0.00, isUp: true, tagline: 'Define tu propia tasa de cambio preferida' }
+    ];
+
+    const PRESET_USD_ADDITIONS = [5, 10, 20, 50, 100, 500];
+
+    const formatCents = (cents) => {
+      const floatVal = cents / 100;
+      return floatVal.toLocaleString('es-VE', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    };
+
+    const parseDigitsToCents = (val) => {
+      const digits = (val || '').toString().replace(/\D/g, '');
+      if (!digits) return 0;
+      const parsed = parseInt(digits, 10);
+      return isNaN(parsed) ? 0 : Math.min(parsed, 999999999999);
+    };
+
+    const extractNewDigitsOnInitial = (newRawValue, previousFormattedValue) => {
+      const newDigits = (newRawValue || '').toString().replace(/\D/g, '');
+      if (!newDigits) return 0;
+
+      const oldDigits = (previousFormattedValue || '').toString().replace(/\D/g, '');
+
+      if (newDigits.length < oldDigits.length && !oldDigits.includes(newDigits)) {
+        return parseInt(newDigits, 10) || 0;
+      }
+
+      let tempNew = newDigits;
+      let allMatched = true;
+      for (const char of oldDigits) {
+        const idx = tempNew.indexOf(char);
+        if (idx !== -1) {
+          tempNew = tempNew.slice(0, idx) + tempNew.slice(idx + 1);
+        } else {
+          allMatched = false;
+          break;
+        }
+      }
+
+      if (allMatched && tempNew.length > 0) {
+        return parseInt(tempNew, 10) || 0;
+      }
+
+      if (oldDigits.startsWith(newDigits)) {
+        return 0;
+      }
+
+      return parseInt(newDigits, 10) || 0;
+    };
+
+    // Shared Icon system utilizing inline SVGs
+    const Icon = ({ name, className = "w-5 h-5", ...props }) => {
+      const paths = {
+        menu: html`<path d="M4 12h16M4 6h16M4 18h16" />`,
+        refresh: html`<path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />`,
+        share: html`<circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><path d="M8.59 13.51l6.83 3.98M15.41 6.51L8.59 10.49" />`,
+        copy: html`<rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />`,
+        calendar: html`<rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><path d="M16 2v4M8 2v4M3 10h18" />`,
+        up: html`<path d="M23 6L13.5 15.5 8.5 10.5 1 18M17 6h6v6" />`,
+        down: html`<path d="M23 18L13.5 8.5 8.5 13.5 1 6M17 18h6v-6" />`,
+        x: html`<path d="M18 6L6 18M6 6l12 12" />`,
+        chevronDown: html`<path d="M6 9l6 6 6-6" />`,
+        camera: html`<path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" /><circle cx="12" cy="13" r="4" />`,
+        check: html`<path d="M20 6L9 17l-5-5" />`,
+        settings: html`<circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />`,
+        plus: html`<path d="M12 5v14M5 12h14" />`,
+        search: html`<circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />`,
+        info: html`<circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" />`,
+        list: html`<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />`,
+        history: html`<path d="M12 8v4l3 3M3.05 11a9 9 0 11.2 5.3" /><path d="M3 3v5h5" />`,
+        star: html`<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />`,
+        shield: html`<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />`,
+        zap: html`<path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />`,
+        globe: html`<circle cx="12" cy="12" r="10" /><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />`,
+        coins: html`<circle cx="8" cy="8" r="6" /><circle cx="18" cy="18" r="6" /><path d="M12 18a6 6 0 00-6-6" />`,
+        swap: html`<path d="M16 3l5 5-5 5M21 8H9M8 21l-5-5 5-5M3 16h12" />`,
+        sparkles: html`<path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m11.314 11.314l.707.707M12 8a4 4 0 100 8 4 4 0 000-8z" />`,
+        sun: html`<circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>`,
+        moon: html`<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />`
+      };
+
+      return html`
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className=${className}
+          ...${props}
+        >
+          ${paths[name] || null}
+        </svg>
+      `;
+    };
+
+    function App() {
+      const [appName, setAppName] = useState(() => {
+        return localStorage.getItem('app_name') || 'Monitor VE';
+      });
+
+      const [selectedLogoId, setSelectedLogoId] = useState(() => {
+        return localStorage.getItem('app_logo_id') || 'tricolor';
+      });
+
+      // Light vs Dark Theme mode
+      const [themeMode, setThemeMode] = useState(() => {
+        return localStorage.getItem('theme_mode') || 'dark';
+      });
+
+      const [appTheme, setAppTheme] = useState(() => {
+        return localStorage.getItem('app_skin') || 'obsidian';
+      });
+
+      const [rates, setRates] = useState(() => {
+        const stored = localStorage.getItem('cached_rates');
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            const cleaned = parsed.filter(r => r.id !== 'promedio' && r.id !== 'paypal' && r.id !== 'remesas' && r.id !== 'binance');
+            return cleaned.length > 0 ? cleaned : INITIAL_RATES;
+          } catch(e) {}
+        }
+        return INITIAL_RATES;
+      });
+
+      const [activeRateId, setActiveRateId] = useState('bcv');
+      const [usdCents, setUsdCents] = useState(100);
+      const [bsCents, setBsCents] = useState(() => Math.round(100 * (INITIAL_RATES[0]?.rate || 56.29)));
+      const [usdVal, setUsdVal] = useState('1,00');
+      const [bsVal, setBsVal] = useState(() => (INITIAL_RATES[0]?.rate || 56.29).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+      const [isInitialUsd, setIsInitialUsd] = useState(true);
+      const [isInitialBs, setIsInitialBs] = useState(true);
+      const [isSwapped, setIsSwapped] = useState(false);
+      const [selectedDate, setSelectedDate] = useState('2026-06-05');
+      const [isSpinning, setIsSpinning] = useState(false);
+      const [copiedField, setCopiedField] = useState(null);
+      const [toasts, setToasts] = useState([]);
+      
+      const showToast = (message) => {
+        const id = Date.now() + Math.random().toString(36).substr(2, 5);
+        setToasts(prev => [...prev, { id, message }]);
+        setTimeout(() => {
+          setToasts(prev => prev.filter(t => t.id !== id));
+        }, 3000);
+      };
+
+      // Modal states
+      const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+      const [isRatesSheetOpen, setIsRatesSheetOpen] = useState(false);
+      const [isConfigOpen, setIsConfigOpen] = useState(false);
+      const [isReceiptOpen, setIsReceiptOpen] = useState(false);
+      const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+      const [isShareOpen, setIsShareOpen] = useState(false);
+
+      const [copiedLink, setCopiedLink] = useState(false);
+      const [tempCustomRate, setTempCustomRate] = useState('58.00');
+
+      const [history, setHistory] = useState(() => {
+        const stored = localStorage.getItem('conversion_history');
+        return stored ? JSON.parse(stored) : [];
+      });
+
+      useEffect(() => {
+        localStorage.setItem('conversion_history', JSON.stringify(history));
+      }, [history]);
+
+      useEffect(() => {
+        localStorage.setItem('app_name', appName);
+        localStorage.setItem('app_logo_id', selectedLogoId);
+        localStorage.setItem('theme_mode', themeMode);
+        localStorage.setItem('app_skin', appTheme);
+      }, [appName, selectedLogoId, themeMode, appTheme]);
+
+      const isLight = themeMode === 'light';
+
+      const toggleThemeMode = () => {
+        const next = themeMode === 'dark' ? 'light' : 'dark';
+        setThemeMode(next);
+        showToast(next === 'light' ? '☀️ Modo Claro activado' : '🌙 Modo Oscuro activado');
+      };
+
+      // Tailwind Theme Palette
+      const theme = useMemo(() => {
+        if (isLight) {
+          switch (appTheme) {
+            case 'fintech-mint':
+              return {
+                bg: 'bg-emerald-50/40',
+                cardBg: 'bg-white',
+                inputBg: 'bg-zinc-50',
+                borderColor: 'border-zinc-200',
+                headerBg: 'bg-white/95 border-zinc-200',
+                drawerBg: 'bg-white border-zinc-200',
+                sheetBg: 'bg-white border-emerald-500',
+                modalBg: 'bg-white border-zinc-200',
+                textPrimary: 'text-zinc-900',
+                textSecondary: 'text-zinc-600',
+                textMuted: 'text-zinc-400',
+                accentText: 'text-emerald-600',
+                accentBg: 'bg-emerald-50',
+                accentBorder: 'border-emerald-300',
+                buttonBg: 'bg-emerald-500 hover:bg-emerald-600',
+                buttonText: 'text-white',
+                bulletColor: 'bg-emerald-500',
+                chipBg: 'bg-zinc-100 hover:bg-emerald-100 text-zinc-800 border-zinc-200',
+                iconBtnBg: 'bg-zinc-100 hover:bg-zinc-200 text-zinc-700 border-zinc-200',
+                subCardBg: 'bg-zinc-50 border-zinc-200',
+                speedBg: '#e4e4e7',
+                speedGauge: '#10b981'
+              };
+            case 'cosmic-lavender':
+              return {
+                bg: 'bg-violet-50/40',
+                cardBg: 'bg-white',
+                inputBg: 'bg-zinc-50',
+                borderColor: 'border-zinc-200',
+                headerBg: 'bg-white/95 border-zinc-200',
+                drawerBg: 'bg-white border-zinc-200',
+                sheetBg: 'bg-white border-violet-500',
+                modalBg: 'bg-white border-zinc-200',
+                textPrimary: 'text-zinc-900',
+                textSecondary: 'text-zinc-600',
+                textMuted: 'text-zinc-400',
+                accentText: 'text-violet-600',
+                accentBg: 'bg-violet-50',
+                accentBorder: 'border-violet-300',
+                buttonBg: 'bg-violet-600 hover:bg-violet-700',
+                buttonText: 'text-white',
+                bulletColor: 'bg-violet-500',
+                chipBg: 'bg-zinc-100 hover:bg-violet-100 text-zinc-800 border-zinc-200',
+                iconBtnBg: 'bg-zinc-100 hover:bg-zinc-200 text-zinc-700 border-zinc-200',
+                subCardBg: 'bg-zinc-50 border-zinc-200',
+                speedBg: '#e4e4e7',
+                speedGauge: '#8b5cf6'
+              };
+            case 'obsidian':
+            default:
+              return {
+                bg: 'bg-zinc-100',
+                cardBg: 'bg-white',
+                inputBg: 'bg-zinc-50',
+                borderColor: 'border-zinc-200',
+                headerBg: 'bg-white/95 border-zinc-200',
+                drawerBg: 'bg-white border-zinc-200',
+                sheetBg: 'bg-white border-amber-400',
+                modalBg: 'bg-white border-zinc-200',
+                textPrimary: 'text-zinc-900',
+                textSecondary: 'text-zinc-600',
+                textMuted: 'text-zinc-400',
+                accentText: 'text-amber-600',
+                accentBg: 'bg-amber-50',
+                accentBorder: 'border-amber-300',
+                buttonBg: 'bg-amber-400 hover:bg-amber-500',
+                buttonText: 'text-neutral-950 font-black',
+                bulletColor: 'bg-amber-500',
+                chipBg: 'bg-zinc-100 hover:bg-amber-100 text-zinc-800 border-zinc-200',
+                iconBtnBg: 'bg-zinc-100 hover:bg-zinc-200 text-zinc-700 border-zinc-200',
+                subCardBg: 'bg-zinc-50 border-zinc-200',
+                speedBg: '#e4e4e7',
+                speedGauge: '#f59e0b'
+              };
+          }
+        }
+
+        // Dark theme palettes
+        switch (appTheme) {
+          case 'fintech-mint':
+            return {
+              bg: 'bg-[#080d0c]',
+              cardBg: 'bg-zinc-900/95',
+              inputBg: 'bg-zinc-950',
+              borderColor: 'border-zinc-800',
+              headerBg: 'bg-neutral-950/95 border-zinc-900',
+              drawerBg: 'bg-[#0d0d0d] border-zinc-900',
+              sheetBg: 'bg-[#0d0d0d] border-emerald-500',
+              modalBg: 'bg-[#0d0d0d] border-zinc-800',
+              textPrimary: 'text-zinc-100',
+              textSecondary: 'text-zinc-400',
+              textMuted: 'text-zinc-500',
+              accentText: 'text-emerald-400',
+              accentBg: 'bg-emerald-500/10',
+              accentBorder: 'border-emerald-500/20',
+              buttonBg: 'bg-emerald-400 hover:bg-emerald-500',
+              buttonText: 'text-neutral-950 font-black',
+              bulletColor: 'bg-emerald-500',
+              chipBg: 'bg-zinc-950 hover:bg-emerald-500/20 text-zinc-200 border-zinc-800',
+              iconBtnBg: 'bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border-zinc-850',
+              subCardBg: 'bg-zinc-950 border-zinc-800',
+              speedBg: '#1f1f1d',
+              speedGauge: '#10b981'
+            };
+          case 'cosmic-lavender':
+            return {
+              bg: 'bg-[#0b0a12]',
+              cardBg: 'bg-zinc-900/95',
+              inputBg: 'bg-zinc-950',
+              borderColor: 'border-zinc-800',
+              headerBg: 'bg-neutral-950/95 border-zinc-900',
+              drawerBg: 'bg-[#0d0d0d] border-zinc-900',
+              sheetBg: 'bg-[#0d0d0d] border-violet-500',
+              modalBg: 'bg-[#0d0d0d] border-zinc-800',
+              textPrimary: 'text-zinc-100',
+              textSecondary: 'text-zinc-400',
+              textMuted: 'text-zinc-500',
+              accentText: 'text-violet-400',
+              accentBg: 'bg-violet-500/10',
+              accentBorder: 'border-violet-500/20',
+              buttonBg: 'bg-violet-400 hover:bg-violet-500',
+              buttonText: 'text-neutral-950 font-black',
+              bulletColor: 'bg-violet-500',
+              chipBg: 'bg-zinc-950 hover:bg-violet-500/20 text-zinc-200 border-zinc-800',
+              iconBtnBg: 'bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border-zinc-850',
+              subCardBg: 'bg-zinc-950 border-zinc-800',
+              speedBg: '#1f1f1d',
+              speedGauge: '#8b5cf6'
+            };
+          case 'obsidian':
+          default:
+            return {
+              bg: 'bg-[#090909]',
+              cardBg: 'bg-zinc-900/90',
+              inputBg: 'bg-zinc-950',
+              borderColor: 'border-zinc-800/80',
+              headerBg: 'bg-neutral-950/95 border-zinc-900',
+              drawerBg: 'bg-[#0d0d0d] border-zinc-900',
+              sheetBg: 'bg-[#0d0d0d] border-yellow-400',
+              modalBg: 'bg-[#0d0d0d] border-zinc-800',
+              textPrimary: 'text-zinc-100',
+              textSecondary: 'text-zinc-400',
+              textMuted: 'text-zinc-500',
+              accentText: 'text-yellow-400',
+              accentBg: 'bg-yellow-400/10',
+              accentBorder: 'border-yellow-400/20',
+              buttonBg: 'bg-yellow-400 hover:bg-yellow-500',
+              buttonText: 'text-neutral-950 font-black',
+              bulletColor: 'bg-yellow-400',
+              chipBg: 'bg-zinc-950 hover:bg-yellow-400 hover:text-zinc-950 text-zinc-200 border-zinc-800',
+              iconBtnBg: 'bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border-zinc-850',
+              subCardBg: 'bg-zinc-950 border-zinc-800',
+              speedBg: '#1f1f1d',
+              speedGauge: '#facc15'
+            };
+        }
+      }, [appTheme, isLight]);
+
+      const activeRateObj = useMemo(() => {
+        return rates.find(r => r.id === activeRateId) || rates[0];
+      }, [rates, activeRateId]);
+
+      const activeRateWithFee = activeRateObj ? activeRateObj.rate : 56.29;
+
+      const handleUsdChange = (val) => {
+        let cents;
+        if (isInitialUsd) {
+          setIsInitialUsd(false);
+          setIsInitialBs(false);
+          cents = extractNewDigitsOnInitial(val, usdVal);
+        } else {
+          cents = parseDigitsToCents(val);
+        }
+        setUsdCents(cents);
+        setUsdVal(formatCents(cents));
+
+        const usdNum = cents / 100;
+        const bsNum = usdNum * activeRateWithFee;
+        const computedBsCents = Math.round(bsNum * 100);
+        setBsCents(computedBsCents);
+        setBsVal(formatCents(computedBsCents));
+      };
+
+      const handleBsChange = (val) => {
+        let cents;
+        if (isInitialBs) {
+          setIsInitialBs(false);
+          setIsInitialUsd(false);
+          cents = extractNewDigitsOnInitial(val, bsVal);
+        } else {
+          cents = parseDigitsToCents(val);
+        }
+        setBsCents(cents);
+        setBsVal(formatCents(cents));
+
+        const bsNum = cents / 100;
+        const usdNum = activeRateWithFee > 0 ? (bsNum / activeRateWithFee) : 0;
+        const computedUsdCents = Math.round(usdNum * 100);
+        setUsdCents(computedUsdCents);
+        setUsdVal(formatCents(computedUsdCents));
+      };
+
+      const handleSwapInputs = () => {
+        setIsSwapped(prev => !prev);
+        showToast(!isSwapped ? 'Conversión invertida: Bolívares ⇄ Dólares' : 'Conversión: Dólares ⇄ Bolívares');
+      };
+
+      useEffect(() => {
+        if (!isSwapped) {
+          const usdNum = usdCents / 100;
+          const bsNum = usdNum * activeRateWithFee;
+          const computedBsCents = Math.round(bsNum * 100);
+          setBsCents(computedBsCents);
+          setBsVal(formatCents(computedBsCents));
+        } else {
+          const bsNum = bsCents / 100;
+          const usdNum = activeRateWithFee > 0 ? (bsNum / activeRateWithFee) : 0;
+          const computedUsdCents = Math.round(usdNum * 100);
+          setUsdCents(computedUsdCents);
+          setUsdVal(formatCents(computedUsdCents));
+        }
+      }, [activeRateId, activeRateWithFee, isSwapped]);
+
+      const handleCopyToClipboard = (text, fieldName) => {
+        if (!text) return;
+        try {
+          navigator.clipboard.writeText(text);
+          setCopiedField(fieldName);
+          showToast(`Copiado: ${text}`);
+          setTimeout(() => setCopiedField(null), 2000);
+        } catch (err) {
+          showToast('Navegador restringió el copiado');
+        }
+      };
+
+      const fetchRealRates = async (silent = false) => {
+        if (!silent) setIsSpinning(true);
+        try {
+          const res = await fetch('https://ve.dolarapi.com/v1/dolares');
+          const data = await res.json();
+          if (data && Array.isArray(data)) {
+            const oficial = data.find(item => item.fuente === 'oficial');
+            const paralelo = data.find(item => item.fuente === 'paralelo');
+            setRates(prev => prev.filter(r => r.id !== 'promedio').map(r => {
+              if (r.id === 'bcv' && oficial) {
+                const oldRate = r.rate;
+                const newRate = Number(oficial.promedio.toFixed(2));
+                const diff = Number((newRate - oldRate).toFixed(2));
+                const pct = oldRate > 0 ? Number(((diff / oldRate) * 100).toFixed(2)) : r.changePercent;
+                return { ...r, rate: newRate, changeAbsolute: diff, changePercent: pct, isUp: diff >= 0 };
+              }
+              if (r.id === 'usdt' && paralelo) {
+                const newRate = Number((paralelo.promedio * 1.05).toFixed(2));
+                const diff = Number((newRate - r.rate).toFixed(2));
+                const pct = r.rate > 0 ? Number(((diff / r.rate) * 100).toFixed(2)) : r.changePercent;
+                return { ...r, rate: newRate, changeAbsolute: diff, changePercent: pct, isUp: diff >= 0 };
+              }
+              if (r.id === 'euro' && oficial) {
+                const newRate = Number((oficial.promedio * 1.09).toFixed(2));
+                const diff = Number((newRate - r.rate).toFixed(2));
+                const pct = r.rate > 0 ? Number(((diff / r.rate) * 100).toFixed(2)) : r.changePercent;
+                return { ...r, rate: newRate, changeAbsolute: diff, changePercent: pct, isUp: diff >= 0 };
+              }
+              return r;
+            }));
+            localStorage.setItem('cached_rates', JSON.stringify(rates));
+            if (!silent) showToast('Tasas de cambio actualizadas en línea ✓');
+          }
+        } catch (e) {
+          if (!silent) showToast('Modo sin conexión: Tasas locales activas.');
+        } finally {
+          if (!silent) setTimeout(() => setIsSpinning(false), 500);
+        }
+      };
+
+      const handleDateChange = (val) => {
+        setSelectedDate(val);
+        setIsSpinning(true);
+        setTimeout(() => {
+          setRates(prev => prev.map(r => {
+            if (r.id === 'personalizada') return r;
+            const fluctuation = (Math.random() - 0.45) * 0.4;
+            const freshRate = Number((r.rate + fluctuation).toFixed(2));
+            return {
+              ...r,
+              rate: freshRate,
+              changeAbsolute: Number(fluctuation.toFixed(2)),
+              changePercent: Number(((fluctuation / r.rate) * 100).toFixed(2)),
+              isUp: fluctuation >= 0
+            };
+          }));
+          setIsSpinning(false);
+          showToast(`Fecha: ${formatDateSpanish(val)}`);
+        }, 400);
+      };
+
+      const formatDateSpanish = (dateStr) => {
+        if (!dateStr) return '';
+        const parts = dateStr.split('-');
+        if (parts.length !== 3) return dateStr;
+        const year = parts[0];
+        const monthNum = parseInt(parts[1], 10);
+        const day = parts[2];
+        const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+        return `${day} de ${months[monthNum - 1] || 'Mes'}, ${year}`;
+      };
+
+      const handleSaveToHistory = () => {
+        const parsedUsd = usdCents / 100;
+        const parsedBs = bsCents / 100;
+        if (parsedUsd <= 0 && parsedBs <= 0) {
+          showToast('Ingresa un monto válido');
+          return;
+        }
+        const freshRecord = {
+          id: Date.now().toString(),
+          timestamp: new Date().toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' }) + ' - ' + formatDateSpanish(selectedDate),
+          rateName: activeRateObj.name,
+          rateValue: activeRateWithFee,
+          usdAmount: parsedUsd,
+          bsAmount: parsedBs
+        };
+        setHistory(prev => [freshRecord, ...prev]);
+        showToast('Conversión guardada en reportes');
+      };
+
+      const addPresetUSD = (amount) => {
+        let nextCents;
+        if (isInitialUsd) {
+          nextCents = amount * 100;
+          setIsInitialUsd(false);
+          setIsInitialBs(false);
+        } else {
+          nextCents = usdCents + (amount * 100);
+        }
+        setUsdCents(nextCents);
+        setUsdVal(formatCents(nextCents));
+
+        const usdNum = nextCents / 100;
+        const bsNum = usdNum * activeRateWithFee;
+        const computedBsCents = Math.round(bsNum * 100);
+        setBsCents(computedBsCents);
+        setBsVal(formatCents(computedBsCents));
+        showToast(`+$${amount} USD agregado`);
+      };
+
+      const handleSaveCustomRate = () => {
+        const numeric = parseFloat(tempCustomRate.replace(',', '.'));
+        if (isNaN(numeric) || numeric <= 0) {
+          showToast('Establece un valor de tasa válido');
+          return;
+        }
+        setRates(prev => prev.map(r => {
+          if (r.id === 'personalizada') {
+            return { ...r, rate: numeric };
+          }
+          return r;
+        }));
+        setActiveRateId('personalizada');
+        setIsConfigOpen(false);
+        showToast(`Tasa personalizada: ${numeric.toFixed(2)} Bs/$`);
+      };
+
+      const handleShareApp = () => {
+        try {
+          navigator.clipboard.writeText(window.location.href);
+          setCopiedLink(true);
+          showToast('Enlace copiado al portapapeles');
+          setTimeout(() => setCopiedLink(false), 2000);
+        } catch (e) {
+          showToast('Acción completada');
+        }
+      };
+
+      const renderLogo = (size) => {
+        const style = size === 'small' ? "w-5 h-5 shrink-0" : "w-16 h-16 mb-1 rounded-2xl";
+        switch (selectedLogoId) {
+          case 'star':
+            return html`
+              <div className="${style} bg-yellow-400 flex items-center justify-center shadow text-neutral-950 rounded-lg">
+                <${Icon} name="star" className=${size === 'small' ? "w-3.5 h-3.5 fill-current" : "w-9 h-9 fill-current"} />
+              </div>
+            `;
+          case 'shield':
+            return html`
+              <div className="${style} ${isLight ? 'bg-white' : 'bg-zinc-900'} border border-yellow-400 flex items-center justify-center shadow text-yellow-500 rounded-lg">
+                <${Icon} name="shield" className=${size === 'small' ? "w-3.5 h-3.5" : "w-9 h-9"} />
+              </div>
+            `;
+          case 'zap':
+            return html`
+              <div className="${style} bg-yellow-400 flex items-center justify-center shadow text-neutral-950 rounded-lg">
+                <${Icon} name="zap" className=${size === 'small' ? "w-3.5 h-3.5 fill-current" : "w-9 h-9 fill-current"} />
+              </div>
+            `;
+          case 'globe':
+            return html`
+              <div className="${style} ${isLight ? 'bg-white' : 'bg-zinc-900'} border border-yellow-400 flex items-center justify-center shadow text-yellow-500 rounded-lg">
+                <${Icon} name="globe" className=${size === 'small' ? "w-3.5 h-3.5 animate-spin" : "w-9 h-9 animate-spin"} />
+              </div>
+            `;
+          case 'coins':
+            return html`
+              <div className="${style} bg-yellow-400 flex items-center justify-center shadow text-neutral-950 rounded-lg">
+                <${Icon} name="coins" className=${size === 'small' ? "w-3.5 h-3.5" : "w-9 h-9"} />
+              </div>
+            `;
+          case 'tricolor':
+          default:
+            return html`
+              <div className="${size === 'small' ? 'w-5 h-5' : 'w-16 h-16'} relative flex items-center justify-center shrink-0">
+                <svg className="w-full h-full relative" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="12" r="10.5" stroke="#FACC15" strokeWidth="1" className="fill-zinc-950" />
+                  <path d="M 4 11 C 8 8, 16 14, 20 11 L 20 13 C 16 16, 8 10, 4 13 Z" fill="#FACC15" />
+                  <path d="M 4 13 C 8 10, 16 16, 20 13 L 20 15 C 16 18, 8 12, 4 15 Z" fill="#2563EB" />
+                  <path d="M 4 15 C 8 12, 16 18, 20 15 L 20 17 C 16 20, 8 14, 4 17 Z" fill="#DC2626" />
+                  <text x="12" y="13.2" fill="#FDE047" fontSize="11" fontWeight="900" fontFamily="sans-serif" textAnchor="middle" dominantBaseline="middle">$</text>
+                </svg>
+              </div>
+            `;
+        }
+      };
+
+      return html`
+        <div className="min-h-screen flex flex-col justify-between ${theme.bg} ${theme.textPrimary} transition-colors duration-300 pb-16">
+          
+          <!-- FLOATING TOASTS NOTIFICATIONS -->
+          <div className="fixed top-6 right-6 z-50 flex flex-col gap-2 max-w-xs pointer-events-none">
+            ${toasts.map(t => html`
+              <div key=${t.id} className="pointer-events-auto flex items-center gap-2 ${isLight ? 'bg-white text-zinc-900 border-zinc-200 shadow-xl' : 'bg-zinc-950 text-zinc-100 border-zinc-800 shadow-2xl'} px-4 py-3 rounded-xl border animate-scale-up">
+                <${Icon} name="sparkles" className="w-4 h-4 text-amber-500 animate-pulse" />
+                <span className="text-xs font-semibold leading-none">${t.message}</span>
+              </div>
+            `)}
+          </div>
+
+          <!-- STICKY HEADER APPBAR -->
+          <header className="sticky top-0 z-[40] ${theme.headerBg} backdrop-blur-md px-4 py-3.5 flex items-center justify-between border-b ${theme.borderColor} transition-colors duration-300">
+            <div className="flex items-center gap-2.5">
+              <button 
+                onClick=${() => setIsDrawerOpen(true)}
+                className="p-2 ${theme.iconBtnBg} rounded-xl border transition-all active:scale-95"
+                title="Menú"
+              >
+                <${Icon} name="menu" className="w-4 h-4" />
+              </button>
+              
+              <div 
+                onClick=${() => setIsConfigOpen(true)}
+                className="flex items-center gap-2 cursor-pointer group active:scale-95 transition-all select-none"
+              >
+                ${renderLogo('small')}
+                <span className="font-display font-black text-sm tracking-tight ${theme.textPrimary} uppercase">
+                  ${appName} <span className=${theme.accentText}>Pro</span>
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <!-- THEME TOGGLE BUTTON -->
+              <button 
+                onClick=${toggleThemeMode}
+                className="p-2.5 ${theme.iconBtnBg} rounded-xl border transition-all ${theme.accentText} active:scale-95"
+                title=${isLight ? "Cambiar a Modo Oscuro" : "Cambiar a Modo Claro"}
+              >
+                <${Icon} name=${isLight ? "moon" : "sun"} className="w-4 h-4" />
+              </button>
+
+              <button 
+                onClick=${() => fetchRealRates(false)}
+                className="p-2.5 ${theme.iconBtnBg} rounded-xl border transition-all flex items-center gap-1.5 focus:outline-none"
+                title="Sincronizar"
+              >
+                <${Icon} name="refresh" className=${`w-4 h-4 ${theme.accentText} ${isSpinning ? 'animate-spin' : ''}`} />
+                <span className="text-[10px] uppercase tracking-widest font-bold font-mono ${theme.textMuted} hidden sm:inline">sync</span>
+              </button>
+
+              <button 
+                onClick=${() => setIsShareOpen(true)}
+                className="px-3.5 py-2.5 bg-yellow-400 hover:bg-yellow-500 text-neutral-950 rounded-xl font-black text-xs transition-all active:scale-95 flex items-center gap-1"
+                title="Compartir"
+              >
+                <${Icon} name="share" className="w-3.5 h-3.5 text-zinc-950" />
+                <span className="hidden sm:inline">Compartir</span>
+              </button>
+            </div>
+          </header>
+
+          <main className="max-w-md w-full mx-auto px-4 py-6 space-y-5 flex-1 select-none">
+            
+            <!-- DIAL HEADER -->
+            <section className="${theme.cardBg} rounded-[2.5rem] p-6 shadow-xl border ${theme.borderColor} space-y-4 relative overflow-hidden text-center transition-colors duration-300">
+              <div className="absolute top-3 right-4 flex items-center gap-1.5">
+                <span className="w-2 h-2 ${theme.bulletColor} rounded-full animate-ping" />
+                <span className="text-[9px] font-mono font-bold tracking-widest ${theme.accentText} uppercase">Tasa en línea</span>
+              </div>
+
+              <div className="relative w-36 h-36 mx-auto flex flex-col items-center justify-center">
+                <svg className="absolute inset-0 w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="44" stroke=${theme.speedBg} strokeWidth="4.5" fill="transparent" />
+                  <circle 
+                    cx="50" 
+                    cy="50" 
+                    r="44" 
+                    stroke=${theme.speedGauge} 
+                    strokeWidth="5" 
+                    fill="transparent" 
+                    strokeDasharray="276"
+                    strokeDashoffset="110"
+                    strokeLinecap="round"
+                    className="transition-all duration-1000 ease-out"
+                  />
+                </svg>
+
+                <div className="relative pt-2 text-center">
+                  <span className="text-[9px] font-bold ${theme.textMuted} tracking-widest block uppercase font-mono">Factor de Cambio</span>
+                  <h3 className="font-display font-black text-3xl ${theme.textPrimary} tracking-tight leading-none my-1">
+                    ${activeRateWithFee.toLocaleString('es-VE', { minimumFractionDigits: 2 })}
+                  </h3>
+                  <span className="text-[9px] font-bold ${theme.textSecondary} font-mono ${theme.inputBg} px-2 py-0.5 rounded-full border ${theme.borderColor}">
+                    Bs. / $ USD
+                  </span>
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <h4 className="font-extrabold text-sm ${theme.textPrimary}">${activeRateObj ? activeRateObj.name : 'Tasa'}</h4>
+                <p className="text-[10px] ${theme.textSecondary}">${activeRateObj ? activeRateObj.tagline : 'Tasa activa'}</p>
+              </div>
+            </section>
+
+            <!-- BIDIRECTIONAL CALCULATOR BOX -->
+            <section className="${theme.cardBg} rounded-[2.5rem] p-6 border ${theme.borderColor} shadow-xl space-y-5 relative transition-colors duration-300">
+              <div className="flex items-center justify-between pb-1">
+                <h3 className="font-display font-black text-base ${theme.textPrimary} uppercase tracking-tight flex items-center gap-1.5">
+                  <${Icon} name="coins" className=${theme.accentText} />
+                  <span>Calculadora de Divisas</span>
+                </h3>
+                
+                <button
+                  onClick=${() => setIsRatesSheetOpen(true)}
+                  className=${`flex items-center gap-1 px-3 py-1.5 rounded-xl ${theme.inputBg} border text-[11px] font-bold transition-all ${theme.accentBorder} ${theme.accentText}`}
+                >
+                  <span>${activeRateObj ? activeRateObj.name : 'Tasa'}</span>
+                  <${Icon} name="chevronDown" className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <!-- Field 1 (USD by default, or Bs if inverted) -->
+                ${!isSwapped ? html`
+                  <div className="${theme.inputBg} border ${theme.borderColor} rounded-2xl p-4 flex items-center justify-between focus-within:ring-2 focus-within:ring-yellow-400 transition-all">
+                    <div className="space-y-1 w-2/3 text-left">
+                      <span className="text-[10px] font-bold ${theme.textMuted} uppercase tracking-widest block font-display">
+                        Cantidad (Dólares divisa)
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <span className="text-xl font-black ${theme.accentText}">$</span>
+                        <input 
+                          type="text"
+                          inputMode="numeric"
+                          value=${usdVal}
+                          onChange=${(e) => handleUsdChange(e.target.value)}
+                          className="text-2xl font-bold font-display ${theme.textPrimary} bg-transparent outline-none w-full border-none p-0 focus:ring-0"
+                          placeholder="0,00"
+                          id="input-usd"
+                        />
+                      </div>
+                    </div>
+                    <button 
+                      onClick=${() => handleCopyToClipboard(usdVal, 'usd')}
+                      className="p-3 ${theme.iconBtnBg} rounded-xl border transition-all active:scale-95"
+                      title="Copiar USD"
+                    >
+                      <${Icon} name=${copiedField === 'usd' ? "check" : "copy"} className=${copiedField === 'usd' ? "text-emerald-500" : ""} />
+                    </button>
+                  </div>
+                ` : html`
+                  <div className="${theme.inputBg} border ${theme.borderColor} rounded-2xl p-4 flex items-center justify-between focus-within:ring-2 focus-within:ring-yellow-400 transition-all">
+                    <div className="space-y-1 w-2/3 text-left">
+                      <span className="text-[10px] font-bold ${theme.textMuted} uppercase tracking-widest block font-display">
+                        Monto en Bolívares (Bs.)
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <span className="text-sm font-bold ${theme.accentText} font-mono">Bs.</span>
+                        <input 
+                          type="text"
+                          inputMode="numeric"
+                          value=${bsVal}
+                          onChange=${(e) => handleBsChange(e.target.value)}
+                          className="text-2xl font-bold font-display ${theme.textPrimary} bg-transparent outline-none w-full border-none p-0 focus:ring-0"
+                          placeholder="0,00"
+                          id="input-bs"
+                        />
+                      </div>
+                    </div>
+                    <button 
+                      onClick=${() => handleCopyToClipboard(bsVal, 'bs')}
+                      className="p-3 ${theme.iconBtnBg} rounded-xl border transition-all active:scale-95"
+                      title="Copiar Bolívares"
+                    >
+                      <${Icon} name=${copiedField === 'bs' ? "check" : "copy"} className=${copiedField === 'bs' ? "text-emerald-500" : ""} />
+                    </button>
+                  </div>
+                `}
+
+                <!-- Interactive Invert / Swap Button -->
+                <div className="flex justify-center -my-2.5 relative z-10">
+                  <button 
+                    onClick=${handleSwapInputs}
+                    className="bg-yellow-400 hover:bg-yellow-500 text-neutral-950 p-3 rounded-full shadow-md border-4 ${isLight ? 'border-white' : 'border-zinc-900'} transition-all duration-300 active:scale-90 hover:scale-105"
+                    title=${isSwapped ? "Cambiar orden a USD ➔ Bs" : "Cambiar orden a Bs ➔ USD"}
+                  >
+                    <${Icon} name="swap" className=${`w-4 h-4 transition-transform duration-300 ${isSwapped ? 'rotate-180' : ''}`} />
+                  </button>
+                </div>
+
+                <!-- Field 2 (Bs by default, or USD if inverted) -->
+                ${!isSwapped ? html`
+                  <div className="${theme.inputBg} border ${theme.borderColor} rounded-2xl p-4 flex items-center justify-between focus-within:ring-2 focus-within:ring-yellow-400 transition-all">
+                    <div className="space-y-1 w-2/3 text-left">
+                      <span className="text-[10px] font-bold ${theme.textMuted} uppercase tracking-widest block font-display">
+                        Monto en Bolívares (Bs.)
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <span className="text-sm font-bold ${theme.accentText} font-mono">Bs.</span>
+                        <input 
+                          type="text"
+                          inputMode="numeric"
+                          value=${bsVal}
+                          onChange=${(e) => handleBsChange(e.target.value)}
+                          className="text-2xl font-bold font-display ${theme.textPrimary} bg-transparent outline-none w-full border-none p-0 focus:ring-0"
+                          placeholder="0,00"
+                          id="input-bs"
+                        />
+                      </div>
+                    </div>
+                    <button 
+                      onClick=${() => handleCopyToClipboard(bsVal, 'bs')}
+                      className="p-3 ${theme.iconBtnBg} rounded-xl border transition-all active:scale-95"
+                      title="Copiar Bolívares"
+                    >
+                      <${Icon} name=${copiedField === 'bs' ? "check" : "copy"} className=${copiedField === 'bs' ? "text-emerald-500" : ""} />
+                    </button>
+                  </div>
+                ` : html`
+                  <div className="${theme.inputBg} border ${theme.borderColor} rounded-2xl p-4 flex items-center justify-between focus-within:ring-2 focus-within:ring-yellow-400 transition-all">
+                    <div className="space-y-1 w-2/3 text-left">
+                      <span className="text-[10px] font-bold ${theme.textMuted} uppercase tracking-widest block font-display">
+                        Cantidad (Dólares divisa)
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <span className="text-xl font-black ${theme.accentText}">$</span>
+                        <input 
+                          type="text"
+                          inputMode="numeric"
+                          value=${usdVal}
+                          onChange=${(e) => handleUsdChange(e.target.value)}
+                          className="text-2xl font-bold font-display ${theme.textPrimary} bg-transparent outline-none w-full border-none p-0 focus:ring-0"
+                          placeholder="0,00"
+                          id="input-usd"
+                        />
+                      </div>
+                    </div>
+                    <button 
+                      onClick=${() => handleCopyToClipboard(usdVal, 'usd')}
+                      className="p-3 ${theme.iconBtnBg} rounded-xl border transition-all active:scale-95"
+                      title="Copiar USD"
+                    >
+                      <${Icon} name=${copiedField === 'usd' ? "check" : "copy"} className=${copiedField === 'usd' ? "text-emerald-500" : ""} />
+                    </button>
+                  </div>
+                `}
+              </div>
+
+              <!-- Quick Presets -->
+              <div className="space-y-2 text-left">
+                <span className="text-[10px] font-bold ${theme.textMuted} uppercase tracking-widest block font-display">
+                  Atajos Rápidos USD
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  ${PRESET_USD_ADDITIONS.map(amount => html`
+                    <button
+                      key=${amount}
+                      onClick=${() => addPresetUSD(amount)}
+                      className="px-3.5 py-2 text-xs font-bold rounded-xl ${theme.chipBg} border transition-all active:scale-95 flex items-center gap-1"
+                    >
+                      <${Icon} name="plus" className="w-3 h-3" />
+                      <span>+$${amount}</span>
+                    </button>
+                  `)}
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  onClick=${handleSaveToHistory}
+                  className="w-full ${theme.buttonBg} ${theme.buttonText} font-black text-xs py-3.5 rounded-xl transition-all shadow-md active:scale-95 flex items-center justify-center gap-1.5"
+                >
+                  <${Icon} name="plus" className="w-4 h-4" />
+                  <span>Guardar Informe de Conversión</span>
+                </button>
+              </div>
+            </section>
+
+            <!-- DATE AND CALENDAR BAR -->
+            <section className="${theme.cardBg} rounded-2xl p-4 flex flex-col items-center space-y-3 shadow-md border ${theme.borderColor}">
+              <div className="flex items-center justify-between w-full">
+                <div className="relative flex items-center gap-2 ${theme.inputBg} rounded-xl px-4 py-2.5 border ${theme.borderColor} flex-1 cursor-pointer">
+                  <${Icon} name="calendar" className="w-4 h-4 ${theme.accentText}" />
+                  <input 
+                    type="date" 
+                    value=${selectedDate}
+                    onChange=${(e) => handleDateChange(e.target.value)}
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full text-xs"
+                    max="2026-06-05"
+                    min="2026-05-20"
+                  />
+                  <span className="text-xs font-bold ${theme.textPrimary}">
+                    ${formatDateSpanish(selectedDate)}
+                  </span>
+                </div>
+
+                <button 
+                  onClick=${() => setIsHistoryOpen(true)}
+                  className="ml-2 p-2.5 bg-yellow-400 hover:bg-yellow-500 text-neutral-950 rounded-xl transition-all relative font-bold shadow-xs active:scale-95"
+                  title="Historial"
+                >
+                  <${Icon} name="history" className="w-4 h-4" />
+                  ${history.length > 0 && html`
+                    <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white font-mono text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
+                      ${history.length}
+                    </span>
+                  `}
+                </button>
+              </div>
+
+              <p className="${theme.accentText} font-bold text-xs text-center">
+                ⚠️ ¡Próxima fecha de valor disponible!
+              </p>
+            </section>
+
+          </main>
+
+          <!-- FLOATING ACTION BUTTONS -->
+          <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-30">
+            <button 
+              onClick=${() => setIsReceiptOpen(true)}
+              className="w-14 h-14 ${theme.cardBg} ${theme.textPrimary} rounded-full shadow-2xl border ${theme.borderColor} flex items-center justify-center transition-all hover:scale-105 active:scale-95"
+              title="Generar Recibo"
+            >
+              <${Icon} name="camera" className="w-6 h-6 ${theme.accentText}" />
+            </button>
+
+            <button 
+              onClick=${() => setIsRatesSheetOpen(true)}
+              className="w-14 h-14 bg-yellow-400 hover:bg-yellow-500 text-neutral-950 rounded-full shadow-2xl flex items-center justify-center transition-all hover:scale-105 active:scale-95"
+              title="Lista de Tasas"
+            >
+              <${Icon} name="list" className="w-6 h-6" />
+            </button>
+          </div>
+
+          <!-- DRAWER SIDEBAR -->
+          ${isDrawerOpen && html`
+            <div className="fixed inset-0 z-50 overflow-hidden">
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-xs pointer-events-auto" onClick=${() => setIsDrawerOpen(false)} />
+              
+              <div className="absolute inset-y-0 left-0 max-w-xs w-full ${theme.drawerBg} shadow-2xl flex flex-col justify-between p-6 overflow-y-auto animate-slide-right border-r ${theme.borderColor}">
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between pb-4 border-b ${theme.borderColor}">
+                    <div className="flex items-center gap-2">
+                      ${renderLogo('small')}
+                      <span className="font-display font-black text-lg ${theme.textPrimary}">
+                        ${appName}
+                      </span>
+                    </div>
+                    <button onClick=${() => setIsDrawerOpen(false)} className="p-1.5 rounded-lg ${theme.iconBtnBg}">
+                      <${Icon} name="x" className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <nav className="space-y-2">
+                    <button
+                      onClick=${() => { setIsDrawerOpen(false); setIsRatesSheetOpen(true); }}
+                      className="w-full text-left font-bold ${theme.textPrimary} rounded-xl py-3 px-4 flex items-center gap-3 transition-colors ${isLight ? 'hover:bg-zinc-100' : 'hover:bg-zinc-900'}"
+                    >
+                      <${Icon} name="list" className="w-5 h-5 ${theme.accentText}" />
+                      <span>Calculadora de Tasas</span>
+                    </button>
+
+                    <!-- THEME SWITCHER IN DRAWER -->
+                    <button
+                      onClick=${() => { toggleThemeMode(); setIsDrawerOpen(false); }}
+                      className="w-full text-left font-bold ${theme.textPrimary} rounded-xl py-3 px-4 flex items-center justify-between transition-colors ${isLight ? 'hover:bg-zinc-100' : 'hover:bg-zinc-900'}"
+                    >
+                      <div className="flex items-center gap-3">
+                        <${Icon} name=${isLight ? "moon" : "sun"} className="w-5 h-5 ${theme.accentText}" />
+                        <span>${isLight ? 'Activar Modo Oscuro' : 'Activar Modo Claro'}</span>
+                      </div>
+                      <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded ${theme.accentBg} ${theme.accentText} border ${theme.accentBorder}">
+                        ${isLight ? 'Claro' : 'Oscuro'}
+                      </span>
+                    </button>
+
+                    <button
+                      onClick=${() => { setIsDrawerOpen(false); setIsConfigOpen(true); }}
+                      className="w-full text-left font-bold ${theme.textPrimary} rounded-xl py-3 px-4 flex items-center gap-3 transition-colors ${isLight ? 'hover:bg-zinc-100' : 'hover:bg-zinc-900'}"
+                    >
+                      <${Icon} name="settings" className="w-5 h-5 ${theme.accentText}" />
+                      <span>Configuración y Diseño</span>
+                    </button>
+
+                    <button
+                      onClick=${() => { setIsDrawerOpen(false); setIsHistoryOpen(true); }}
+                      className="w-full text-left font-bold ${theme.textPrimary} rounded-xl py-3 px-4 flex items-center gap-3 transition-colors ${isLight ? 'hover:bg-zinc-100' : 'hover:bg-zinc-900'}"
+                    >
+                      <${Icon} name="history" className="w-5 h-5 ${theme.accentText}" />
+                      <span>Reportes locales</span>
+                    </button>
+                  </nav>
+                </div>
+
+                <div className="mt-8 pt-4 border-t ${theme.borderColor}">
+                  <span className="text-xs text-zinc-500 font-mono block text-center">${appName} • 2026</span>
+                </div>
+              </div>
+            </div>
+          `}
+
+          <!-- RATES SHEET OVERLAY -->
+          ${isRatesSheetOpen && html`
+            <div className="fixed inset-0 z-50 overflow-hidden flex items-end justify-center">
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-xs pointer-events-auto" onClick=${() => setIsRatesSheetOpen(false)} />
+              
+              <div className="absolute max-w-md w-full ${theme.sheetBg} rounded-t-[2.5rem] shadow-2xl p-6 border-t-2 z-10 max-h-[85vh] overflow-y-auto flex flex-col">
+                <div className="w-12 h-1.5 ${isLight ? 'bg-zinc-300' : 'bg-zinc-800'} rounded-full mx-auto mb-4 cursor-pointer" onClick=${() => setIsRatesSheetOpen(false)} />
+
+                <div className="flex items-center justify-between pb-3">
+                  <div>
+                    <h2 className="font-display font-black text-2xl ${theme.textPrimary}">Monedas</h2>
+                    <p className="${theme.textSecondary} text-xs font-semibold">${formatDateSpanish(selectedDate)}</p>
+                  </div>
+                  <button onClick=${() => fetchRealRates(false)} className="p-2.5 ${theme.iconBtnBg} rounded-xl border">
+                    <${Icon} name="refresh" className="w-4 h-4 ${theme.accentText}" />
+                  </button>
+                </div>
+
+                <div className="space-y-3 flex-1 overflow-y-auto mt-2">
+                  ${rates.map(rate => {
+                    const isSelected = rate.id === activeRateId;
+                    return html`
+                      <div 
+                        key=${rate.id}
+                        onClick=${() => {
+                          setActiveRateId(rate.id);
+                          setIsRatesSheetOpen(false);
+                          showToast(`Tasa: ${rate.name}`);
+                        }}
+                        className="p-4 rounded-2xl border transition-all flex items-center justify-between cursor-pointer ${isSelected ? 'bg-yellow-400/10 border-yellow-400' : `${theme.subCardBg} ${theme.borderColor}`}"
+                      >
+                        <div>
+                          <h4 className="font-extrabold text-sm ${theme.textPrimary}">${rate.name}</h4>
+                          <p className="text-[10px] ${theme.textSecondary}">${rate.tagline}</p>
+                        </div>
+                        <span className="font-mono font-black text-sm ${theme.accentText}">
+                          ${rate.rate.toFixed(2)} Bs
+                        </span>
+                      </div>
+                    `;
+                  })}
+                </div>
+
+                <div className="mt-4 pt-3 border-t ${theme.borderColor}">
+                  <button onClick=${() => setIsRatesSheetOpen(false)} className="w-full py-3 font-bold text-xs ${theme.iconBtnBg} rounded-xl border">
+                    Cerrar
+                  </button>
+                </div>
+              </div>
+            </div>
+          `}
+
+          <!-- CONFIG MODAL -->
+          ${isConfigOpen && html`
+            <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-xs pointer-events-auto" onClick=${() => setIsConfigOpen(false)} />
+              
+              <div className="relative ${theme.modalBg} max-w-sm w-full rounded-2xl p-5 border ${theme.borderColor} shadow-2xl space-y-4 z-10 ${theme.textPrimary}">
+                <div className="flex items-center justify-between pb-2 border-b ${theme.borderColor}">
+                  <h3 className="font-display font-black text-xl flex items-center gap-1.5">
+                    <${Icon} name="settings" className="w-5 h-5 ${theme.accentText}" />
+                    <span>Diseño y Configuración</span>
+                  </h3>
+                  <button onClick=${() => setIsConfigOpen(false)} className="p-1 rounded-lg ${theme.iconBtnBg}">
+                    <${Icon} name="x" className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <!-- Theme mode toggle -->
+                <div className="space-y-2">
+                  <label className="text-xs font-extrabold ${theme.textSecondary} block">Modo de Tema</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick=${() => { setThemeMode('light'); showToast('☀️ Modo Claro'); }}
+                      className="p-3 rounded-xl border flex items-center justify-center gap-2 font-bold text-xs ${isLight ? 'bg-yellow-400 text-neutral-950 border-yellow-400' : `${theme.inputBg} ${theme.borderColor}`}"
+                    >
+                      <${Icon} name="sun" className="w-4 h-4" />
+                      <span>Modo Claro</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick=${() => { setThemeMode('dark'); showToast('🌙 Modo Oscuro'); }}
+                      className="p-3 rounded-xl border flex items-center justify-center gap-2 font-bold text-xs ${!isLight ? 'bg-zinc-800 text-yellow-400 border-yellow-400' : `${theme.inputBg} ${theme.borderColor}`}"
+                    >
+                      <${Icon} name="moon" className="w-4 h-4" />
+                      <span>Modo Oscuro</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- App name -->
+                <div className="space-y-1">
+                  <label className="text-xs font-extrabold ${theme.textSecondary} block">Nombre de la App</label>
+                  <input
+                    type="text"
+                    value=${appName}
+                    onChange=${(e) => setAppName(e.target.value)}
+                    className="w-full ${theme.inputBg} border ${theme.borderColor} rounded-xl px-3 py-2 text-sm font-bold ${theme.textPrimary} outline-none"
+                  />
+                </div>
+
+                <!-- Custom rate -->
+                <div className="space-y-1">
+                  <label className="text-xs font-extrabold ${theme.textSecondary} block">Tasa Personalizada (Bs/$)</label>
+                  <input
+                    type="text"
+                    value=${tempCustomRate}
+                    onChange=${(e) => setTempCustomRate(e.target.value)}
+                    className="w-full ${theme.inputBg} border ${theme.borderColor} rounded-xl px-3 py-2 text-sm font-bold font-mono ${theme.textPrimary} outline-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 mt-4">
+                  <button onClick=${() => setIsConfigOpen(false)} className="font-bold text-xs py-2.5 rounded-xl border ${theme.iconBtnBg}">
+                    Cancelar
+                  </button>
+                  <button onClick=${handleSaveCustomRate} className="bg-yellow-400 hover:bg-yellow-500 text-neutral-950 font-black text-xs py-2.5 rounded-xl">
+                    Guardar
+                  </button>
+                </div>
+              </div>
+            </div>
+          `}
+
+          <!-- RECEIPT MODAL -->
+          ${isReceiptOpen && html`
+            <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
+              <div className="absolute inset-0 bg-black/75 backdrop-blur-xs pointer-events-auto" onClick=${() => setIsReceiptOpen(false)} />
+              
+              <div className="relative ${isLight ? 'bg-white' : 'bg-[#141413]'} max-w-xs w-full rounded-[2rem] shadow-2xl p-6 border-4 border-yellow-400 space-y-4 z-10 ${theme.textPrimary}">
+                <div className="text-center space-y-1">
+                  <span className="font-display font-black text-lg text-yellow-500 uppercase">Boleta de Cambio</span>
+                  <p className="text-[10px] ${theme.textMuted} font-mono">ID: AL-${Math.floor(Math.random() * 900000 + 100000)}</p>
+                </div>
+
+                <div className="space-y-2 text-xs divide-y divide-dotted ${theme.borderColor}">
+                  <div className="pt-2 flex justify-between">
+                    <span className="${theme.textSecondary}">Tasa:</span>
+                    <span className="font-bold font-mono ${theme.accentText}">${activeRateWithFee.toFixed(2)} Bs/$</span>
+                  </div>
+                  <div className="pt-2 flex justify-between">
+                    <span className="${theme.textSecondary}">Monto USD:</span>
+                    <span className="font-bold">${parseFloat(usdVal || '0').toFixed(2)} USD</span>
+                  </div>
+                  <div className="pt-2 flex justify-between">
+                    <span className="${theme.textSecondary}">Total Bs:</span>
+                    <span className="font-black ${theme.accentText}">Bs. ${bsVal || '0,00'}</span>
+                  </div>
+                </div>
+
+                <button
+                  onClick=${() => {
+                    const text = `*${appName} - Boleta*\nTasa: ${activeRateObj.name}\nConversión: $${parseFloat(usdVal || '0').toFixed(2)} -> Bs. ${bsVal}\nFecha: ${formatDateSpanish(selectedDate)}`;
+                    navigator.clipboard.writeText(text);
+                    showToast('Boleta copiada');
+                    setIsReceiptOpen(false);
+                  }}
+                  className="w-full bg-yellow-400 hover:bg-yellow-500 text-neutral-950 text-xs font-black py-2.5 rounded-xl flex items-center justify-center gap-1.5"
+                >
+                  <${Icon} name="copy" className="w-3.5 h-3.5" />
+                  <span>Copiar Boleta</span>
+                </button>
+              </div>
+            </div>
+          `}
+
+          <!-- CALCULATION HISTORY MODAL -->
+          ${isHistoryOpen && html`
+            <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-xs pointer-events-auto" onClick=${() => setIsHistoryOpen(false)} />
+              
+              <div className="relative ${theme.modalBg} max-w-sm w-full rounded-2xl p-5 border ${theme.borderColor} shadow-2xl space-y-3.5 z-10 max-h-[80vh] overflow-y-auto flex flex-col ${theme.textPrimary}">
+                <div className="flex items-center justify-between pb-2 border-b ${theme.borderColor}">
+                  <h3 className="font-display font-black text-lg flex items-center gap-1.5">
+                    <${Icon} name="history" className="w-5 h-5 ${theme.accentText}" />
+                    <span>Reportes Guardados</span>
+                  </h3>
+                  <button onClick=${() => setIsHistoryOpen(false)} className="p-1 rounded-lg ${theme.iconBtnBg}">
+                    <${Icon} name="x" className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto space-y-2.5 min-h-[160px]">
+                  ${history.length === 0 ? html`
+                    <p className="text-center text-xs ${theme.textSecondary} py-8">No hay conversiones guardadas.</p>
+                  ` : history.map(item => html`
+                    <div key=${item.id} className="${theme.subCardBg} rounded-xl p-3 border ${theme.borderColor} text-xs space-y-1.5">
+                      <div className="flex justify-between">
+                        <span className="font-bold">${item.rateName}</span>
+                        <span className="font-mono text-[10px] ${theme.accentText}">Bs. ${item.rateValue.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-[11px]">
+                        <span>$${item.usdAmount.toFixed(2)}</span>
+                        <span className="font-black ${theme.accentText}">Bs. ${item.bsAmount.toLocaleString('es-VE', { minimumFractionDigits: 2 })}</span>
+                      </div>
+                    </div>
+                  `)}
+                </div>
+
+                <button onClick=${() => setIsHistoryOpen(false)} className="w-full ${theme.iconBtnBg} font-bold text-xs py-2.5 rounded-xl border">
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          `}
+
+          <!-- SHARE MODAL -->
+          ${isShareOpen && html`
+            <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-xs pointer-events-auto" onClick=${() => setIsShareOpen(false)} />
+              
+              <div className="relative ${theme.modalBg} max-w-sm w-full rounded-2xl p-5 border ${theme.borderColor} shadow-2xl space-y-4 z-10 ${theme.textPrimary}">
+                <div className="flex items-center justify-between pb-2 border-b ${theme.borderColor}">
+                  <h3 className="font-display font-black text-lg flex items-center gap-1.5">
+                    <${Icon} name="share" className="w-5 h-5 ${theme.accentText}" />
+                    <span>Compartir Aplicación</span>
+                  </h3>
+                  <button onClick=${() => setIsShareOpen(false)} className="p-1 rounded-lg ${theme.iconBtnBg}">
+                    <${Icon} name="x" className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="${theme.subCardBg} p-3 rounded-xl border ${theme.borderColor} flex items-center justify-between">
+                  <span className="text-[10px] font-mono ${theme.textSecondary} truncate max-w-[80%]">${window.location.href}</span>
+                  <button onClick=${handleShareApp} className="p-2 ${theme.iconBtnBg} rounded-lg border ${theme.accentText}">
+                    <${Icon} name=${copiedLink ? "check" : "copy"} className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                <button onClick=${() => setIsShareOpen(false)} className="w-full ${theme.iconBtnBg} font-bold text-xs py-2.5 rounded-xl border">
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          `}
+
+          <footer className="text-center text-[10px] ${theme.textMuted} font-mono tracking-widest uppercase mt-8 select-none">
+            <span>${appName} • 2026</span>
+          </footer>
+
+        </div>
+      `;
+    }
+
+    ReactDOM.render(React.createElement(App), document.getElementById('root'));
+  </script>
+</body>
+</html>

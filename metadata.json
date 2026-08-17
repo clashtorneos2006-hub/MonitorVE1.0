@@ -1,0 +1,6 @@
+{
+  "name": "Monitor VE",
+  "description": "Calculadora de divisas en tiempo real para Venezuela con tasas actualizadas de BCV, Euro, USDT, historial extendido de tasas por días y meses con gráficos interactivos, optimizada y configurada para despliegue en GitHub y Netlify.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
