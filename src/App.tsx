@@ -38,6 +38,7 @@ import { INITIAL_RATES } from './data/initialData';
 import { ExchangeRate, CalculationHistory } from './types';
 import { HistoricalRatesModal } from './components/HistoricalRatesModal';
 import { ShareModal } from './components/ShareModal';
+import { AdMobBanner } from './components/AdMobBanner';
 import { lookupRateByDate, formatDateToSpanish } from './data/historicalData';
 
 export default function App() {
@@ -1356,6 +1357,11 @@ export default function App() {
               <span>Viernes (Hoy)</span>
             </div>
           </div>
+        </section>
+
+        {/* Google AdMob Official Adaptive Bottom Banner */}
+        <section className="pt-1 pb-2">
+          <AdMobBanner themeClasses={themeClasses} isLight={isLight} />
         </section>
 
       </main>

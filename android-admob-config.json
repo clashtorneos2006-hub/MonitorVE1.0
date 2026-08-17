@@ -1,0 +1,22 @@
+{
+  "admob": {
+    "app_id": "ca-app-pub-8691199752535040~6291064809",
+    "banner_ad_unit_id": "ca-app-pub-8691199752535040/7699565579",
+    "banner_position": "bottom",
+    "banner_format": "ADAPTIVE_BANNER",
+    "test_mode": false,
+    "android_manifest_meta": {
+      "name": "com.google.android.gms.ads.APPLICATION_ID",
+      "value": "ca-app-pub-8691199752535040~6291064809"
+    }
+  },
+  "android_build": {
+    "package_name": "com.monitorve.app",
+    "app_name": "Monitor VE",
+    "target_sdk": 34,
+    "min_sdk": 24,
+    "dependencies": {
+      "play_services_ads": "com.google.android.gms:play-services-ads:23.3.0"
+    }
+  }
+}
