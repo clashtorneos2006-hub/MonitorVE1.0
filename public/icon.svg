@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Background Gradient -->
+    <radialGradient id="bgGrad" cx="50%" cy="40%" r="65%">
+      <stop offset="0%" stop-color="#18181b" />
+      <stop offset="60%" stop-color="#09090b" />
+      <stop offset="100%" stop-color="#000000" />
+    </radialGradient>
+
+    <!-- Outer Gold Ring Gradient -->
+    <linearGradient id="goldRing" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FEF08A" />
+      <stop offset="25%" stop-color="#FACC15" />
+      <stop offset="50%" stop-color="#CA8A04" />
+      <stop offset="75%" stop-color="#EAB308" />
+      <stop offset="100%" stop-color="#FDE047" />
+    </linearGradient>
+
+    <!-- Shiny Central Dollar Sign Gradient -->
+    <linearGradient id="dollarGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="20%" stop-color="#FEF08A" />
+      <stop offset="50%" stop-color="#FACC15" />
+      <stop offset="85%" stop-color="#CA8A04" />
+      <stop offset="100%" stop-color="#854D0E" />
+    </linearGradient>
+
+    <!-- Tricolor Flag Ribbon Gradients -->
+    <linearGradient id="flagYellow" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FEF08A" />
+      <stop offset="50%" stop-color="#FACC15" />
+      <stop offset="100%" stop-color="#EAB308" />
+    </linearGradient>
+
+    <linearGradient id="flagBlue" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#3B82F6" />
+      <stop offset="50%" stop-color="#1D4ED8" />
+      <stop offset="100%" stop-color="#1E40AF" />
+    </linearGradient>
+
+    <linearGradient id="flagRed" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#EF4444" />
+      <stop offset="50%" stop-color="#DC2626" />
+      <stop offset="100%" stop-color="#991B1B" />
+    </linearGradient>
+
+    <!-- Deep Drop Shadows -->
+    <filter id="shadowHeavy" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="7.68" stdDeviation="10.24" flood-color="#000000" flood-opacity="0.9" />
+    </filter>
+
+    <filter id="glowGold" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="15.36" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Solid Container Canvas (Required for PWA maskable) -->
+  <rect width="512" height="512" rx="112.64" fill="#09090b" />
+
+  <!-- Outer Ambient Gold Glow -->
+  <circle cx="256" cy="256" r="223.744" fill="#EAB308" opacity="0.12" filter="url(#glowGold)" />
+
+  <!-- Outer Emblem Circle with Gold Stroke -->
+  <circle cx="256" cy="256" r="235.52" fill="url(#bgGrad)" stroke="url(#goldRing)" stroke-width="11.264" filter="url(#shadowHeavy)" />
+  
+  <!-- Inner Subtle Accent Ring -->
+  <circle cx="256" cy="256" r="209.92" fill="none" stroke="#27272a" stroke-width="4.096" stroke-dasharray="10.24 6.144" />
+
+  <!-- 3 Curved Tricolor Venezuelan Flag Waves -->
+  <!-- Top Yellow Wave -->
+  <path d="M 62.87360000000001 239.2064 
+           C 182.52800000000002 167.8336, 329.472 308.48, 449.1264 239.2064
+           L 440.7296 272.79359999999997
+           C 329.472 342.06719999999996, 182.52800000000002 201.42079999999999, 71.27040000000002 272.79359999999997 Z" 
+        fill="url(#flagYellow)" opacity="0.95" />
+
+  <!-- Middle Blue Wave -->
+  <path d="M 71.27040000000002 272.79359999999997 
+           C 182.52800000000002 201.42079999999999, 329.472 342.06719999999996, 440.7296 272.79359999999997
+           L 428.13439999999997 306.3808
+           C 329.472 375.6544, 182.52800000000002 235.008, 83.86560000000003 306.3808 Z" 
+        fill="url(#flagBlue)" opacity="0.95" />
+
+  <!-- Bottom Red Wave -->
+  <path d="M 83.86560000000003 306.3808 
+           C 182.52800000000002 235.008, 329.472 375.6544, 428.13439999999997 306.3808
+           L 411.3408 339.968
+           C 329.472 409.24159999999995, 182.52800000000002 268.5952, 100.6592 339.968 Z" 
+        fill="url(#flagRed)" opacity="0.95" />
+
+  <!-- 8 White Stars Arc in the Blue Band -->
+  <g fill="#FFFFFF" opacity="0.9" filter="url(#shadowHeavy)">
+    
+      <circle cx="140.54399999999998" cy="262.2976" r="5.632" />
+    
+      <circle cx="176.2304" cy="274.8928" r="5.632" />
+    
+      <circle cx="209.8176" cy="285.3888" r="5.632" />
+    
+      <circle cx="241.3056" cy="291.6864" r="5.632" />
+    
+      <circle cx="270.6944" cy="291.6864" r="5.632" />
+    
+      <circle cx="302.1824" cy="285.3888" r="5.632" />
+    
+      <circle cx="335.76959999999997" cy="274.8928" r="5.632" />
+    
+      <circle cx="371.456" cy="262.2976" r="5.632" />
+    
+  </g>
+
+  <!-- Central 3D Embossed Golden Dollar Sign '$' -->
+  <!-- Dollar drop shadow backplate -->
+  <text x="256" y="263.68" 
+        fill="#000000" 
+        opacity="0.8"
+        font-size="266.24" 
+        font-weight="900" 
+        font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" 
+        text-anchor="middle" 
+        dominant-baseline="central">$</text>
+
+  <!-- Main Dollar Text with Gold Gradient and Stroke -->
+  <text x="256" y="256" 
+        fill="url(#dollarGrad)" 
+        stroke="#78350F" 
+        stroke-width="5.12"
+        font-size="266.24" 
+        font-weight="900" 
+        font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" 
+        text-anchor="middle" 
+        dominant-baseline="central"
+        filter="url(#shadowHeavy)">$</text>
+
+  <!-- Subtle Specular Highlight -->
+  <ellipse cx="256" cy="114.68799999999999" rx="105.98400000000001" ry="35.328" fill="#FFFFFF" opacity="0.08" />
+</svg>

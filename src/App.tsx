@@ -31,7 +31,9 @@ import {
   Coins,
   Sun,
   Moon,
-  BarChart3
+  BarChart3,
+  Smartphone,
+  Download
 } from 'lucide-react';
 import { INITIAL_RATES } from './data/initialData';
 import { ExchangeRate, CalculationHistory } from './types';
@@ -311,6 +313,21 @@ export default function App() {
   const [copiedLink, setCopiedLink] = useState(false);
   const [premiumActive, setPremiumActive] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isStandaloneApp, setIsStandaloneApp] = useState<boolean>(() => {
+    return window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true;
+  });
+
+  // Listen for PWA beforeinstallprompt event
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
 
   // Custom rate form state
   const [tempCustomRate, setTempCustomRate] = useState<string>('780.00');
@@ -841,6 +858,25 @@ export default function App() {
     navigator.clipboard.writeText(window.location.href);
     setTimeout(() => setCopiedLink(false), 2000);
     showToast('Enlace copiado al portapapeles');
+  };
+
+  // Progressive Web App (PWA) Install / Add to Home Screen handler
+  const handleInstallApp = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        showToast('🎉 ¡Monitor VE agregado a tu pantalla de inicio!');
+      }
+      setDeferredPrompt(null);
+    } else {
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+      if (isIOS) {
+        showToast('📱 En iPhone: Toca "Compartir" (⎋) y luego "Agregar a inicio"');
+      } else {
+        showToast('📱 En Android: Toca el menú (⋮) y selecciona "Instalar aplicación"');
+      }
+    }
   };
 
   // Calculated USDT/BCV gap
@@ -1424,6 +1460,26 @@ export default function App() {
                     {rates.find(r => r.id === 'usdt')?.rate.toFixed(2)}
                   </span>
                 </button>
+
+                {/* PWA / INSTALL SHORTCUT BUTTON */}
+                {!isStandaloneApp && (
+                  <button
+                    onClick={() => { setIsDrawerOpen(false); handleInstallApp(); }}
+                    className={`w-full text-left font-bold ${themeClasses.textPrimary} rounded-xl py-3 px-4 flex items-center justify-between transition-colors ${isLight ? 'bg-amber-50 hover:bg-amber-100/70 border border-amber-200' : 'bg-yellow-400/10 hover:bg-yellow-400/20 border border-yellow-400/30'}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Smartphone className="w-5 h-5 text-yellow-400" />
+                      <div>
+                        <span className="block text-sm leading-tight">Instalar Aplicación</span>
+                        <span className={`text-[10.5px] font-normal ${themeClasses.textSecondary} block`}>Acceso directo en inicio</span>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-yellow-400 text-neutral-950 flex items-center gap-1 shadow-2xs">
+                      <Download className="w-2.5 h-2.5" />
+                      <span>Instalar</span>
+                    </span>
+                  </button>
+                )}
 
                 {/* THEME SWITCHER ITEM INSIDE DRAWER */}
                 <button
