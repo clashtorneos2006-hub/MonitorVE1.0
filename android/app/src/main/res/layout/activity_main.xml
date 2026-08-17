@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 
+  Monitor VE - Senior Android AdMob Sticky Bottom Layout (RelativeLayout implementation)
+  Anchors the AdView permanently to the bottom (parent bottom) with layout_alignParentBottom="true"
+  Content / WebView is positioned above the banner (android:layout_above) so nothing is ever occluded.
+-->
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:ads="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/root_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#09090b"
+    tools:context=".MainActivity">
+
+    <!-- 1. MAIN SCROLLABLE CONTENT / WEBVIEW CONTAINER (Occupies all space ABOVE the banner) -->
+    <FrameLayout
+        android:id="@+id/main_content_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_alignParentTop="true"
+        android:layout_above="@+id/admob_sticky_bottom_container">
+
+        <!-- Hybrid WebView or Native ScrollView for financial exchange rates -->
+        <WebView
+            android:id="@+id/webView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:overScrollMode="never" />
+
+    </FrameLayout>
+
+    <!-- 2. STICKY ANCHORED BOTTOM ADMOB BANNER CONTAINER (Always fixed to screen bottom) -->
+    <LinearLayout
+        android:id="@+id/admob_sticky_bottom_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="#09090b"
+        android:elevation="12dp"
+        android:paddingTop="2dp"
+        android:paddingBottom="0dp">
+
+        <!-- Top subtle accent divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#1f2937" />
+
+        <!-- Google AdMob Adaptive Banner AdView (Official Unit ID: ca-app-pub-8691199752535040/7699565579) -->
+        <com.google.android.gms.ads.AdView
+            android:id="@+id/adView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            ads:adSize="BANNER"
+            ads:adUnitId="ca-app-pub-8691199752535040/7699565579" />
+
+    </LinearLayout>
+
+</RelativeLayout>

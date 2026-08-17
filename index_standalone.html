@@ -21,6 +21,9 @@
     }
   </script>
 
+  <!-- Google AdSense Official Global Script & Verification -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8691199752535040" crossorigin="anonymous"></script>
+
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -780,10 +783,10 @@
             </div>
           </header>
 
-          <main className="max-w-md w-full mx-auto px-4 py-6 space-y-5 flex-1 select-none">
+          <main className="max-w-md w-full mx-auto px-4 pt-2.5 sm:pt-4 pb-6 space-y-4 flex-1 select-none">
             
             <!-- DIAL HEADER -->
-            <section className="${theme.cardBg} rounded-[2.5rem] p-6 shadow-xl border ${theme.borderColor} space-y-4 relative overflow-hidden text-center transition-colors duration-300">
+            <section className="${theme.cardBg} rounded-[2.5rem] p-4.5 sm:p-6 shadow-xl border ${theme.borderColor} space-y-3.5 relative overflow-hidden text-center transition-colors duration-300">
               <div className="absolute top-3 right-4 flex items-center gap-1.5">
                 <span className="w-2 h-2 ${theme.bulletColor} rounded-full animate-ping" />
                 <span className="text-[9px] font-mono font-bold tracking-widest ${theme.accentText} uppercase">Tasa en línea</span>
@@ -1034,54 +1037,10 @@
               </p>
             </section>
 
-            <!-- Google AdMob Adaptive Banner Container -->
-            <aside aria-label="Espacio Publicitario Google AdMob" className="w-full select-none pt-1 pb-2">
-              <div className="relative overflow-hidden rounded-2xl border ${isLight ? 'bg-gradient-to-r from-zinc-100 via-amber-50/40 to-zinc-100 border-zinc-300/80' : 'bg-gradient-to-r from-neutral-900 via-neutral-950 to-neutral-900 border-zinc-800/80'} shadow-sm">
-                <div className="flex items-center justify-between px-3 pt-1.5 pb-0.5 border-b border-zinc-700/20 text-[9px]">
-                  <div className="flex items-center gap-1.5">
-                    <span className="bg-yellow-400 text-neutral-950 font-black px-1.5 py-0.5 rounded-[4px] tracking-wider text-[8px] uppercase leading-none">
-                      ANUNCIO
-                    </span>
-                    <span className="font-mono ${isLight ? 'text-zinc-500' : 'text-zinc-400'}">
-                      Google AdMob • Adaptive Banner
-                    </span>
-                  </div>
-                  <span className="text-[8px] font-mono text-emerald-400 font-bold">Oficial ✓</span>
-                </div>
-                <div className="px-3 py-2 flex items-center justify-between gap-3 min-h-[50px]">
-                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                    <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border ${isLight ? 'bg-amber-100 text-amber-900 border-amber-300' : 'bg-yellow-400/10 text-yellow-400 border-yellow-400/30'}">
-                      <${Icon} name="sparkles" className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[11px] font-black tracking-tight truncate ${theme.textPrimary}">Monitor VE Pro</span>
-                        <span className="text-[8px] text-emerald-500 font-bold bg-emerald-500/10 px-1 py-0.2 rounded border border-emerald-500/20">Activo</span>
-                      </div>
-                      <p className="text-[9.5px] font-medium leading-tight truncate ${theme.textSecondary}">
-                        Cotizaciones oficiales y cálculo financiero en tiempo real.
-                      </p>
-                    </div>
-                  </div>
-                  <button onClick=${() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="bg-yellow-400 hover:bg-yellow-500 text-neutral-950 font-black text-[10px] px-2.5 py-1.5 rounded-xl shadow-xs shrink-0">
-                    Abrir
-                  </button>
-                </div>
-              </div>
-            </aside>
-
           </main>
 
-          <!-- FLOATING ACTION BUTTONS -->
-          <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-30">
-            <button 
-              onClick=${() => setIsReceiptOpen(true)}
-              className="w-14 h-14 ${theme.cardBg} ${theme.textPrimary} rounded-full shadow-2xl border ${theme.borderColor} flex items-center justify-center transition-all hover:scale-105 active:scale-95"
-              title="Generar Recibo"
-            >
-              <${Icon} name="camera" className="w-6 h-6 ${theme.accentText}" />
-            </button>
-
+          <!-- FLOATING ACTION BUTTONS (Positioned above sticky bottom banner) -->
+          <div className="fixed bottom-[86px] right-4 sm:right-6 z-30">
             <button 
               onClick=${() => setIsRatesSheetOpen(true)}
               className="w-14 h-14 bg-yellow-400 hover:bg-yellow-500 text-neutral-950 rounded-full shadow-2xl flex items-center justify-center transition-all hover:scale-105 active:scale-95"
@@ -1090,6 +1049,48 @@
               <${Icon} name="list" className="w-6 h-6" />
             </button>
           </div>
+
+          <!-- Google AdSense Sticky Bottom Banner (Fixed parent-bottom, z-35, always visible during scroll) -->
+          <aside 
+            id="adsense-sticky-bottom-container"
+            aria-label="Espacio Publicitario Google AdSense Fijo Inferior" 
+            className="fixed bottom-0 left-0 right-0 z-35 w-full select-none border-t ${isLight ? 'bg-white/95 backdrop-blur-md border-zinc-200/90 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]' : 'bg-neutral-950/95 backdrop-blur-md border-zinc-800/90 shadow-[0_-4px_16px_rgba(0,0,0,0.4)]'}"
+          >
+            <div className="max-w-lg mx-auto px-3 sm:px-4 py-1.5">
+              <div className="relative overflow-hidden rounded-xl border ${isLight ? 'bg-gradient-to-r from-zinc-50 via-amber-50/60 to-zinc-50 border-zinc-300/90' : 'bg-gradient-to-r from-neutral-900 via-neutral-950 to-neutral-900 border-zinc-800/90'} shadow-md">
+                <div className="flex items-center justify-between px-2.5 pt-1 pb-0.5 border-b ${isLight ? 'border-zinc-200/80 bg-zinc-100/50' : 'border-zinc-800/80 bg-neutral-900/50'} text-[8.5px]">
+                  <div className="flex items-center gap-1.5">
+                    <span className="bg-yellow-400 text-neutral-950 font-black px-1.5 py-0.2 rounded-[3px] tracking-wider text-[7.5px] uppercase leading-none">
+                      ANUNCIO
+                    </span>
+                    <span className="font-mono ${isLight ? 'text-zinc-500' : 'text-zinc-400'}">
+                      Google AdSense • Sticky Bottom Banner
+                    </span>
+                  </div>
+                  <span className="text-[8px] font-mono text-emerald-400 font-bold">Oficial ✓</span>
+                </div>
+                <div className="px-2.5 py-1.5 flex items-center justify-between gap-2.5 min-h-[44px]">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border ${isLight ? 'bg-amber-100 text-amber-900 border-amber-300' : 'bg-yellow-400/10 text-yellow-400 border-yellow-400/30'}">
+                      <${Icon} name="sparkles" className="w-3.5 h-3.5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10.5px] font-black tracking-tight truncate ${theme.textPrimary}">Monitor VE Pro</span>
+                        <span className="text-[7.5px] text-emerald-500 font-bold bg-emerald-500/10 px-1 py-0.2 rounded border border-emerald-500/20">Activo</span>
+                      </div>
+                      <p className="text-[8.5px] font-medium leading-tight truncate ${theme.textSecondary}">
+                        Dólar BCV, Euro y USDT en vivo.
+                      </p>
+                    </div>
+                  </div>
+                  <button onClick=${() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="bg-yellow-400 hover:bg-yellow-500 active:scale-95 text-neutral-950 font-black text-[9.5px] px-2.5 py-1 rounded-lg shadow-2xs shrink-0">
+                    Abrir
+                  </button>
+                </div>
+              </div>
+            </div>
+          </aside>
 
           <!-- DRAWER SIDEBAR -->
           ${isDrawerOpen && html`

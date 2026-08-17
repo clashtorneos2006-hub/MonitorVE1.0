@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 
+  Monitor VE - Senior Android AdMob Sticky Bottom Layout (ConstraintLayout implementation)
+  Anchors AdView to bottom with app:layout_constraintBottom_toBottomOf="parent"
+  Main content is constrained between parent top and the top of the ad banner container.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:ads="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/constraint_root_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#09090b"
+    tools:context=".MainActivity">
+
+    <!-- 1. MAIN SCROLL CONTENT (Constrained above the sticky bottom banner) -->
+    <FrameLayout
+        android:id="@+id/main_content_frame"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/admob_sticky_container"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <WebView
+            android:id="@+id/webView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:overScrollMode="never" />
+
+    </FrameLayout>
+
+    <!-- 2. STICKY BOTTOM ADMOB BANNER (Anchored to parent bottom with high elevation) -->
+    <FrameLayout
+        android:id="@+id/admob_sticky_container"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="#09090b"
+        android:elevation="12dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Google AdMob Banner AdView -->
+        <com.google.android.gms.ads.AdView
+            android:id="@+id/adView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            ads:adSize="BANNER"
+            ads:adUnitId="ca-app-pub-8691199752535040/7699565579" />
+
+    </FrameLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -14,7 +14,6 @@ import {
   TrendingDown, 
   X, 
   ChevronDown, 
-  Camera, 
   Check, 
   Settings, 
   Plus, 
@@ -38,7 +37,7 @@ import { INITIAL_RATES } from './data/initialData';
 import { ExchangeRate, CalculationHistory } from './types';
 import { HistoricalRatesModal } from './components/HistoricalRatesModal';
 import { ShareModal } from './components/ShareModal';
-import { AdMobBanner } from './components/AdMobBanner';
+import { AdSenseBanner } from './components/AdSenseBanner';
 import { lookupRateByDate, formatDateToSpanish } from './data/historicalData';
 
 export default function App() {
@@ -312,7 +311,6 @@ export default function App() {
   const [copiedLink, setCopiedLink] = useState(false);
   const [premiumActive, setPremiumActive] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [isCameraFlashing, setIsCameraFlashing] = useState(false);
 
   // Custom rate form state
   const [tempCustomRate, setTempCustomRate] = useState<string>('780.00');
@@ -837,15 +835,6 @@ export default function App() {
     showToast(`Tasa personalizada establecida en ${rateNum.toLocaleString('es-VE')} Bs`);
   };
 
-  // Trigger camera capture / Payment voucher simulation
-  const handleTriggerCamera = () => {
-    setIsCameraFlashing(true);
-    setTimeout(() => {
-      setIsCameraFlashing(false);
-      setIsReceiptOpen(true);
-    }, 300);
-  };
-
   // Share Application simulation
   const handleShareApp = () => {
     setCopiedLink(true);
@@ -885,13 +874,8 @@ export default function App() {
   const isLight = themeMode === 'light';
 
   return (
-    <div className={`min-h-screen ${themeClasses.bg} font-sans ${themeClasses.textPrimary} selection:bg-yellow-400 selection:text-neutral-900 overflow-x-hidden pb-12 relative transition-colors duration-300`}>
+    <div className={`min-h-screen ${themeClasses.bg} font-sans ${themeClasses.textPrimary} selection:bg-yellow-400 selection:text-neutral-900 overflow-x-hidden pb-32 sm:pb-36 relative transition-colors duration-300`}>
       
-      {/* Visual Camera screen flash effect */}
-      {isCameraFlashing && (
-        <div className="fixed inset-0 bg-yellow-400 z-[9999] animate-ping pointer-events-none opacity-80 transition-all duration-300" />
-      )}
-
       {/* Modern floating alert system */}
       {toastMessage && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[999] bg-yellow-400 text-neutral-950 text-xs font-bold px-4 py-3 rounded-full shadow-2xl flex items-center gap-2 border border-yellow-300 animate-bounce">
@@ -958,12 +942,12 @@ export default function App() {
       </header>
 
       {/* Main Container Core Layout */}
-      <main className="max-w-md mx-auto px-4 pt-6 space-y-6">
+      <main className="max-w-md mx-auto px-4 pt-2.5 sm:pt-4 space-y-3.5 sm:space-y-4">
         
         {/* Dynamic header showcase circle / brand center */}
-        <div className="flex flex-col items-center text-center space-y-3.5 my-1">
+        <div className="flex flex-col items-center text-center space-y-2 mt-0 mb-0.5">
           {/* Circular dial resembling rates speedometer */}
-          <div className="relative w-32 h-32 flex items-center justify-center">
+          <div className="relative w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center">
             <svg className="absolute w-full h-full transform -rotate-90" viewBox="0 0 100 100">
               <circle cx="50" cy="50" r="40" stroke={themeClasses.speedBg} strokeWidth="4" fill="transparent" />
               <circle cx="50" cy="50" r="40" stroke={themeClasses.speedGauge} strokeWidth="5" fill="transparent" strokeDasharray="160 250" strokeLinecap="round" className="opacity-30" />
@@ -971,11 +955,11 @@ export default function App() {
             </svg>
             
             {/* Central icon container */}
-            <div className={`w-24 h-24 ${isLight ? 'bg-white border-zinc-200' : 'bg-zinc-950 border-zinc-800'} rounded-full shadow-2xl border flex flex-col items-center justify-center relative p-2`}>
-              <div className="scale-75 flex items-center justify-center -translate-y-1">
+            <div className={`w-18 h-18 sm:w-20 sm:h-20 ${isLight ? 'bg-white border-zinc-200' : 'bg-zinc-950 border-zinc-800'} rounded-full shadow-xl border flex flex-col items-center justify-center relative p-1.5`}>
+              <div className="scale-65 sm:scale-75 flex items-center justify-center -translate-y-1">
                 {renderLogo('large')}
               </div>
-              <div className={`absolute bottom-2.5 flex gap-1 py-0.5 text-[8px] ${themeClasses.textSecondary} font-bold uppercase tracking-wider ${isLight ? 'bg-zinc-100 border-zinc-200' : 'bg-zinc-950 border-zinc-900'} px-2 rounded-full border`}>
+              <div className={`absolute bottom-1.5 flex gap-1 py-0.5 text-[7.5px] ${themeClasses.textSecondary} font-bold uppercase tracking-wider ${isLight ? 'bg-zinc-100 border-zinc-200' : 'bg-zinc-950 border-zinc-900'} px-2 rounded-full border`}>
                 <span className="text-emerald-500 font-mono">En</span>
                 <span className="text-zinc-400 font-mono">/</span>
                 <span className={`font-mono font-bold ${themeClasses.accentText}`}>Vivo</span>
@@ -983,9 +967,9 @@ export default function App() {
             </div>
           </div>
           
-          <div className="space-y-0.5">
-            <h1 className={`font-display font-black text-2xl ${themeClasses.textPrimary} tracking-tight`}>{appName}</h1>
-            <p className={`${themeClasses.textSecondary} text-xs font-semibold uppercase tracking-widest flex items-center justify-center gap-1.5`}>
+          <div className="space-y-0">
+            <h1 className={`font-display font-black text-xl sm:text-2xl ${themeClasses.textPrimary} tracking-tight`}>{appName}</h1>
+            <p className={`${themeClasses.textSecondary} text-[11px] font-semibold uppercase tracking-widest flex items-center justify-center gap-1.5`}>
               <span>Venezuela</span>
               <span className={`w-1.5 h-1.5 rounded-full ${themeClasses.bulletColor} animate-pulse`} />
               <span className={`${themeClasses.accentText} font-bold`}>MONITOREO</span>
@@ -994,61 +978,47 @@ export default function App() {
         </div>
 
         {/* Main Interface Converter Card */}
-        <section className={`${themeClasses.cardBg} rounded-[2rem] p-6 shadow-xl ${isLight ? 'shadow-zinc-200/60 border-zinc-200' : 'shadow-black/80 border-zinc-800/80'} border space-y-5 relative overflow-hidden transition-colors duration-300`}>
+        <section className={`${themeClasses.cardBg} rounded-[2rem] p-4.5 sm:p-6 shadow-xl ${isLight ? 'shadow-zinc-200/60 border-zinc-200' : 'shadow-black/80 border-zinc-800/80'} border space-y-4 relative overflow-hidden transition-colors duration-300`}>
           
           {/* Subtle Decorative pastel yellow background blob inside card */}
           <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-400/5 rounded-full blur-2xl pointer-events-none" />
 
-          {/* Active currency Selector Box */}
-          <div className="flex items-center justify-between">
-            <div className="relative w-full">
-              <label className={`text-[10px] font-bold ${themeClasses.textMuted} uppercase tracking-widest block mb-1`}>
-                Tasa Seleccionada
+          {/* Active Currency Selector Dropdown Trigger */}
+          <div className="w-full">
+            <div className="flex items-center justify-between mb-1.5 px-0.5">
+              <label className={`text-[10px] font-bold ${themeClasses.textMuted} uppercase tracking-widest`}>
+                Moneda / Tasa Activa
               </label>
-              
-              {/* Trigger Rate choosing modal selection directly */}
-              <button 
+              <button
+                type="button"
                 onClick={() => setIsRatesSheetOpen(true)}
-                className={`w-full ${themeClasses.inputBg} hover:opacity-90 ${themeClasses.textPrimary} rounded-2xl px-4 py-3.5 flex items-center justify-between border ${themeClasses.borderColor} transition-all font-display font-bold select-none group`}
-                id="btn-select-rate"
+                className={`text-[10px] font-extrabold ${themeClasses.accentText} hover:underline flex items-center gap-0.5`}
               >
-                <div className="flex items-center gap-2">
-                  <span className={`w-2.5 h-2.5 rounded-full ${themeClasses.bulletColor} animate-ping`} />
-                  <span>{activeRateObj.name}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs ${themeClasses.accentText} font-mono font-bold ${isLight ? 'bg-zinc-100 border-zinc-200' : 'bg-zinc-900 border-zinc-800'} px-2.5 py-1 rounded-lg border`}>
-                    {activeRateWithFee.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs
-                  </span>
-                  <ChevronDown className={`w-4 h-4 ${themeClasses.textMuted} group-hover:translate-y-0.5 transition-transform`} />
-                </div>
+                <span>Ver todas las monedas</span>
+                <ChevronDown className="w-3 h-3" />
               </button>
-
-              {/* Quick Rate Selector Pills */}
-              <div className="grid grid-cols-4 gap-1.5 pt-2">
-                {rates.map(r => {
-                  const isCurActive = r.id === activeRateId;
-                  const label = r.id === 'bcv' ? 'Dólar BCV' : r.id === 'euro' ? 'Euro BCV' : r.id === 'usdt' ? 'USDT P2P' : 'Personal';
-                  return (
-                    <button
-                      key={r.id}
-                      onClick={() => {
-                        setActiveRateId(r.id);
-                        showToast(`Calculando con ${r.name} (${r.rate.toFixed(2)} Bs)`);
-                      }}
-                      className={`py-1.5 px-1 rounded-xl text-center transition-all border flex flex-col items-center justify-center select-none active:scale-95 ${
-                        isCurActive
-                          ? 'bg-yellow-400 text-neutral-950 border-yellow-400 shadow-sm font-black'
-                          : `${themeClasses.inputBg} ${themeClasses.textSecondary} ${themeClasses.borderColor} hover:${themeClasses.textPrimary}`
-                      }`}
-                    >
-                      <span className="text-[9.5px] font-bold tracking-tight truncate w-full">{label}</span>
-                      <span className="text-[11px] font-mono font-bold leading-tight">{r.rate.toFixed(1)}</span>
-                    </button>
-                  );
-                })}
-              </div>
             </div>
+            
+            {/* Trigger Rate choosing modal selection directly */}
+            <button 
+              type="button"
+              onClick={() => setIsRatesSheetOpen(true)}
+              className={`w-full ${themeClasses.inputBg} hover:opacity-95 ${themeClasses.textPrimary} rounded-2xl px-4 py-3 flex items-center justify-between border ${themeClasses.borderColor} transition-all font-display font-bold select-none group shadow-xs`}
+              id="btn-select-rate"
+            >
+              <div className="flex items-center gap-2.5">
+                <span className={`w-2.5 h-2.5 rounded-full ${themeClasses.bulletColor} animate-ping`} />
+                <span className="text-sm font-black tracking-tight">{activeRateObj.name}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={`text-xs ${themeClasses.accentText} font-mono font-black ${isLight ? 'bg-zinc-100 border-zinc-200' : 'bg-zinc-900 border-zinc-800'} px-2.5 py-1 rounded-lg border`}>
+                  {activeRateWithFee.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs
+                </span>
+                <div className={`p-1 rounded-lg ${isLight ? 'bg-zinc-200/70 text-zinc-700' : 'bg-zinc-800 text-zinc-300'} group-hover:translate-y-0.5 transition-transform`}>
+                  <ChevronDown className="w-3.5 h-3.5" />
+                </div>
+              </div>
+            </button>
           </div>
 
           {/* Currency Input Fields */}
@@ -1359,33 +1329,22 @@ export default function App() {
           </div>
         </section>
 
-        {/* Google AdMob Official Adaptive Bottom Banner */}
-        <section className="pt-1 pb-2">
-          <AdMobBanner themeClasses={themeClasses} isLight={isLight} />
-        </section>
-
       </main>
 
-      {/* FLOATING ACTION ICON BUTTONS (Camera & Rates Sheet) */}
-      <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-30">
-        <button 
-          onClick={handleTriggerCamera}
-          className={`w-14 h-14 ${isLight ? 'bg-white text-zinc-900 border-zinc-200' : 'bg-zinc-900 text-white border-zinc-800'} rounded-full shadow-2xl border hover:scale-105 flex items-center justify-center transition-all duration-300 active:scale-95 group focus:outline-none`}
-          title="Generar Recibo del Día"
-          id="float-btn-camera"
-        >
-          <Camera className={`w-6 h-6 ${themeClasses.accentText} transition-colors`} />
-        </button>
-
+      {/* FLOATING ACTION ICON BUTTON (Rates Sheet) - Positioned safely above the Sticky Banner */}
+      <div className="fixed bottom-[86px] sm:bottom-[90px] right-4 sm:right-6 z-30">
         <button 
           onClick={() => setIsRatesSheetOpen(true)}
-          className="w-14 h-14 bg-yellow-400 hover:bg-yellow-500 text-neutral-950 rounded-full shadow-2xl border-2 border-white dark:border-zinc-900 flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 group focus:outline-none"
+          className="w-13 h-13 sm:w-14 sm:h-14 bg-yellow-400 hover:bg-yellow-500 text-neutral-950 rounded-full shadow-2xl border-2 border-white dark:border-zinc-900 flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 group focus:outline-none"
           title="Lista Completa / Monedas"
           id="float-btn-list"
         >
-          <List className="w-6 h-6" />
+          <List className="w-5 h-5 sm:w-6 sm:h-6" />
         </button>
       </div>
+
+      {/* Google AdSense Official Sticky Bottom Banner (Fixed parent-bottom, z-35, always visible during scroll) */}
+      <AdSenseBanner themeClasses={themeClasses} isLight={isLight} isSticky={true} />
 
       {/* ==================== OVERLAYS & MODALS ==================== */}
 
