@@ -40,6 +40,7 @@ import { ExchangeRate, CalculationHistory } from './types';
 import { HistoricalRatesModal } from './components/HistoricalRatesModal';
 import { ShareModal } from './components/ShareModal';
 import { AdSenseBanner } from './components/AdSenseBanner';
+import { SplashScreen } from './components/SplashScreen';
 import { lookupRateByDate, formatDateToSpanish } from './data/historicalData';
 
 export default function App() {
@@ -313,6 +314,8 @@ export default function App() {
   const [copiedLink, setCopiedLink] = useState(false);
   const [premiumActive, setPremiumActive] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [showSplash, setShowSplash] = useState<boolean>(true);
+  const [isRatesLoaded, setIsRatesLoaded] = useState<boolean>(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isStandaloneApp, setIsStandaloneApp] = useState<boolean>(() => {
     return window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true;
@@ -637,6 +640,7 @@ export default function App() {
       if (!silent) {
         setIsSpinning(false);
       }
+      setIsRatesLoaded(true);
     }
   };
 
@@ -912,6 +916,14 @@ export default function App() {
   return (
     <div className={`min-h-screen ${themeClasses.bg} font-sans ${themeClasses.textPrimary} selection:bg-yellow-400 selection:text-neutral-900 overflow-x-hidden pb-32 sm:pb-36 relative transition-colors duration-300`}>
       
+      {/* Animated Splash Screen */}
+      {showSplash && (
+        <SplashScreen 
+          isDataLoaded={isRatesLoaded} 
+          onFinish={() => setShowSplash(false)} 
+        />
+      )}
+
       {/* Modern floating alert system */}
       {toastMessage && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[999] bg-yellow-400 text-neutral-950 text-xs font-bold px-4 py-3 rounded-full shadow-2xl flex items-center gap-2 border border-yellow-300 animate-bounce">
@@ -1505,6 +1517,14 @@ export default function App() {
                 >
                   <Settings className={`w-5 h-5 ${themeClasses.accentText}`} />
                   <span>Configuración y Diseño</span>
+                </button>
+
+                <button
+                  onClick={() => { setIsDrawerOpen(false); setShowSplash(true); }}
+                  className={`w-full text-left font-bold ${themeClasses.textPrimary} rounded-xl py-3 px-4 flex items-center gap-3 transition-colors ${isLight ? 'hover:bg-zinc-100' : 'hover:bg-zinc-900'}`}
+                >
+                  <Sparkles className={`w-5 h-5 ${themeClasses.accentText}`} />
+                  <span>Ver Pantalla de Inicio (Splash)</span>
                 </button>
 
                 <button
